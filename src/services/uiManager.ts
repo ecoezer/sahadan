@@ -2,10 +2,10 @@ import { Match } from '../types/match';
 
 export class UIManager {
   private container: HTMLElement;
-  private loadingElement: HTMLElement;
-  private errorElement: HTMLElement;
-  private matchesContainer: HTMLElement;
-  private lastUpdated: HTMLElement;
+  private loadingElement!: HTMLElement;
+  private errorElement!: HTMLElement;
+  private matchesContainer!: HTMLElement;
+  private lastUpdated!: HTMLElement;
 
   constructor() {
     this.container = document.getElementById('app')!;
