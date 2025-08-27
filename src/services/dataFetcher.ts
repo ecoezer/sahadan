@@ -37,6 +37,12 @@ export class DataFetcher {
       }
       
       const data: ApiResponse = await response.json();
+      
+      // Log debug information if available
+      if (data.debug) {
+        console.log('Debug info:', data.debug);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching matches:', error);
