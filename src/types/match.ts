@@ -22,4 +22,13 @@ export interface ApiResponse {
   timestamp: string;
   source: string;
   totalMatches: number;
+  debug?: {
+    htmlLength?: number;
+    extractedMatches?: number;
+    sampleData?: boolean;
+    parser?: string;
+    fallbackData?: boolean;
+    originalError?: string;
+  };
+  error?: string;
 }
