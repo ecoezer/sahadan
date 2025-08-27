@@ -1,7 +1,7 @@
 import { ApiResponse } from '../types/match';
 
 export class DataFetcher {
-  private static readonly API_URL = 'http://localhost:3001/api/matches';
+  private static readonly API_URL = '/api/matches';
 
   static async fetchMatches(): Promise<ApiResponse> {
     try {
