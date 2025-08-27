@@ -1,21 +1,16 @@
 :root {
-  --primary-green: #4a7c59;
-  --light-green: #e8f5e8;
-  --header-orange: #d2691e;
-  --table-border: #c0c0c0;
-  --row-even: #f8f8f8;
-  --row-hover: #e8f4fd;
+  --sahadan-bg: #f5f5f5;
+  --sahadan-green: #6b8e23;
+  --sahadan-light-green: #e8f5e8;
+  --sahadan-border: #c0c0c0;
+  --sahadan-header-bg: #e8f0e8;
+  --sahadan-orange: #ff6600;
+  --sahadan-red: #cc0000;
   --text-dark: #333333;
   --text-medium: #666666;
   --text-light: #999999;
-  --odds-blue: #0066cc;
-  --odds-red: #cc0000;
-  --background: #ffffff;
-  --sahadan-green: #6b8e23;
-  --sahadan-light-green: #f0f8e8;
-  --sahadan-border: #d4d4d4;
-  --sahadan-header-bg: #e8f0e8;
-  --sahadan-orange: #ff6600;
+  --row-even: #f8f8f8;
+  --row-hover: #fff8e1;
 }
 
 * {
@@ -26,7 +21,7 @@
 
 body {
   font-family: Tahoma, Arial, sans-serif;
-  background: #f5f5f5;
+  background: var(--sahadan-bg);
   color: var(--text-dark);
   font-size: 11px;
   line-height: 1.2;
@@ -36,20 +31,25 @@ body {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 10px;
-  background: #f5f5f5;
+  padding: 0;
+  background: var(--sahadan-bg);
+}
+
+.betting-container {
+  width: 100%;
+  background: var(--sahadan-bg);
 }
 
 /* Header Controls */
 .header-controls {
   background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
   border: 1px solid var(--sahadan-border);
+  border-bottom: none;
   padding: 8px 12px;
   display: flex;
   align-items: center;
   gap: 15px;
   font-size: 11px;
-  margin-bottom: 2px;
 }
 
 .control-group {
@@ -58,21 +58,22 @@ body {
   gap: 8px;
 }
 
-.control-label {
-  color: var(--text-dark);
-  font-weight: normal;
-  font-size: 11px;
-}
-
 .control-button {
-  background: linear-gradient(to bottom, #ff7700, #ff5500);
-  color: white;
-  border: 1px solid #cc4400;
+  background: linear-gradient(to bottom, #f0f0f0, #d0d0d0);
+  color: var(--text-dark);
+  border: 1px solid #999;
   padding: 4px 12px;
   border-radius: 3px;
   font-size: 11px;
   cursor: pointer;
   font-weight: normal;
+  font-family: Tahoma, Arial, sans-serif;
+}
+
+.control-button.active {
+  background: linear-gradient(to bottom, #ff7700, #ff5500);
+  color: white;
+  border: 1px solid #cc4400;
   text-shadow: 0 1px 1px rgba(0,0,0,0.3);
 }
 
@@ -97,13 +98,52 @@ body {
   color: var(--sahadan-green);
   font-weight: normal;
   font-size: 11px;
+  font-family: Tahoma, Arial, sans-serif;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  padding: 0 5px;
+}
+
+.refresh-btn {
+  background: linear-gradient(to bottom, #ff7700, #ff5500);
+  color: white;
+  border: 1px solid #cc4400;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: normal;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: Tahoma, Arial, sans-serif;
+}
+
+.refresh-btn:hover {
+  background: linear-gradient(to bottom, #ff8800, #ff6600);
+}
+
+.last-updated {
+  font-size: 10px;
+  color: var(--text-medium);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: Tahoma, Arial, sans-serif;
 }
 
 /* Date Header */
 .date-header {
   background: var(--sahadan-light-green);
   border: 1px solid var(--sahadan-border);
-  border-top: none;
+  border-bottom: none;
   padding: 6px 12px;
   font-size: 11px;
   color: var(--text-dark);
@@ -126,15 +166,22 @@ body {
   font-family: Tahoma, Arial, sans-serif;
 }
 
-/* Table Header */
+/* Table Headers */
 .table-header-row {
   background: linear-gradient(to bottom, #f0f8f0, #e0f0e0);
   border-bottom: 1px solid var(--sahadan-border);
-  height: 40px;
+  height: 20px;
 }
 
-.table-header-row th {
-  padding: 4px 3px;
+.table-subheader-row {
+  background: linear-gradient(to bottom, #f0f8f0, #e0f0e0);
+  border-bottom: 2px solid var(--sahadan-border);
+  height: 16px;
+}
+
+.table-header-row th,
+.table-subheader-row th {
+  padding: 2px 3px;
   text-align: center;
   font-weight: bold;
   color: var(--text-dark);
@@ -146,49 +193,49 @@ body {
   background: linear-gradient(to bottom, #f0f8f0, #e0f0e0);
 }
 
-.table-header-row th:last-child {
+.table-header-row th:last-child,
+.table-subheader-row th:last-child {
   border-right: none;
 }
 
-/* Specific header widths */
-.time-header { width: 45px; }
-.country-header { width: 35px; }
+/* Header specific styles */
+.time-header { width: 35px; }
+.country-header { width: 25px; }
 .league-header { width: 45px; }
-.status-header { width: 20px; }
-.teams-header { width: 280px; text-align: left; padding-left: 8px; }
-.score-header { width: 60px; }
-.code-header { width: 50px; }
-.odds-header { width: 50px; }
-.combo-header { width: 50px; }
-.actions-header { width: 30px; }
+.status-header { width: 15px; }
+.teams-header { width: 200px; text-align: left; padding-left: 8px; }
+.score-header { width: 35px; }
+.code-header { width: 45px; }
+.odds-header { width: 40px; }
+.all-header { width: 35px; }
 
-/* Multi-line headers */
-.odds-title {
-  font-weight: bold;
-  font-size: 11px;
-  line-height: 12px;
+.red-header {
+  color: var(--sahadan-red);
 }
 
-.odds-subtitle {
+.odds-subheader {
   font-size: 9px;
-  color: var(--text-medium);
   font-weight: normal;
-  line-height: 10px;
+  color: var(--text-medium);
+}
+
+.red-subheader {
+  color: var(--sahadan-red);
 }
 
 /* Match Rows */
 .match-row {
   border-bottom: 1px solid var(--sahadan-border);
-  height: 20px;
+  height: 18px;
   background: white;
 }
 
 .match-row:nth-child(even) {
-  background: #fafafa;
+  background: var(--row-even);
 }
 
 .match-row:hover {
-  background: #fff8e1;
+  background: var(--row-hover);
 }
 
 .match-row td {
@@ -197,8 +244,8 @@ body {
   border-right: 1px solid var(--sahadan-border);
   vertical-align: middle;
   font-size: 11px;
-  height: 20px;
-  line-height: 18px;
+  height: 18px;
+  line-height: 16px;
   font-family: Tahoma, Arial, sans-serif;
 }
 
@@ -216,32 +263,14 @@ body {
 .country-cell {
   padding: 1px 2px;
   text-align: center;
-}
-
-.country-flag {
-  width: 16px;
-  height: 12px;
-  display: inline-block;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 1px solid #ccc;
+  font-size: 14px;
 }
 
 .league-cell {
   font-size: 10px;
-  color: var(--text-medium);
+  color: var(--text-dark);
   text-align: center;
-}
-
-.league-badge {
-  background: var(--sahadan-green);
-  color: white;
-  padding: 1px 3px;
-  border-radius: 2px;
-  font-size: 9px;
-  font-weight: bold;
-  display: inline-block;
+  font-weight: normal;
 }
 
 .status-cell {
@@ -249,16 +278,16 @@ body {
   text-align: center;
 }
 
-.status-icon {
-  width: 12px;
-  height: 12px;
-  background: var(--sahadan-green);
-  border-radius: 2px;
-  display: inline-block;
-  color: white;
-  font-size: 8px;
-  line-height: 12px;
-  text-align: center;
+.status-live {
+  color: var(--sahadan-green);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-cancelled {
+  color: var(--sahadan-red);
+  font-size: 10px;
+  font-weight: bold;
 }
 
 .teams-cell {
@@ -268,20 +297,13 @@ body {
   font-size: 11px;
 }
 
-.match-teams {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .home-team, .away-team {
   color: var(--text-dark);
   font-size: 11px;
 }
 
 .vs-separator {
-  color: var(--text-medium);
-  font-weight: bold;
+  color: var(--text-dark);
 }
 
 .score-cell {
@@ -291,12 +313,8 @@ body {
   text-align: center;
 }
 
-.score-placeholder {
-  color: var(--text-medium);
-}
-
 .code-cell {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-dark);
   font-weight: normal;
 }
@@ -305,9 +323,9 @@ body {
 .odds-cell {
   cursor: pointer;
   transition: background-color 0.1s ease;
-  font-weight: bold;
   text-align: center;
   padding: 1px 2px;
+  vertical-align: middle;
 }
 
 .odds-cell:hover {
@@ -315,63 +333,35 @@ body {
 }
 
 .odds-value {
-  color: var(--odds-blue);
+  color: #0066cc;
   font-weight: bold;
   font-size: 11px;
   display: block;
-  line-height: 12px;
+  line-height: 11px;
 }
 
 .odds-code {
   color: var(--text-light);
   font-size: 9px;
   font-weight: normal;
-  line-height: 8px;
+  line-height: 9px;
 }
 
-.odds-value.highlighted {
-  color: var(--odds-red);
-  background: #ffe6e6;
+.red-odds {
+  color: var(--sahadan-red) !important;
 }
 
-.home-odds .odds-value { color: #0066cc; }
-.draw-odds .odds-value { color: #0066cc; }
-.away-odds .odds-value { color: #0066cc; }
-.over-odds .odds-value { color: #0066cc; }
-.under-odds .odds-value { color: #cc0000; }
-
-.empty-odds {
-  color: var(--text-light);
-}
-
-.combo-cell {
-  font-size: 10px;
-  text-align: center;
-}
-
-.combo-odds {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.combo-value {
-  color: var(--text-dark);
-  font-weight: bold;
-  font-size: 11px;
-}
-
-.actions-cell {
+.all-cell {
   padding: 1px;
   text-align: center;
 }
 
-.bet-button {
+.bet-all-button {
   background: var(--sahadan-green);
   color: white;
   border: none;
   width: 20px;
-  height: 16px;
+  height: 14px;
   border-radius: 2px;
   cursor: pointer;
   font-size: 10px;
@@ -380,7 +370,7 @@ body {
   justify-content: center;
 }
 
-.bet-button:hover {
+.bet-all-button:hover {
   background: #5a7c2a;
 }
 
@@ -415,7 +405,7 @@ body {
 .error {
   padding: 20px;
   text-align: center;
-  color: var(--odds-red);
+  color: var(--sahadan-red);
   background: white;
   border: 1px solid var(--sahadan-border);
   margin: 10px 0;
@@ -428,7 +418,7 @@ body {
 
 .error-content h3 {
   margin-bottom: 10px;
-  color: var(--odds-red);
+  color: var(--sahadan-red);
 }
 
 .retry-btn {
@@ -440,93 +430,11 @@ body {
   cursor: pointer;
   font-size: 11px;
   margin-top: 10px;
+  font-family: Tahoma, Arial, sans-serif;
 }
 
 .hidden {
   display: none !important;
-}
-
-/* Controls styling */
-.controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding: 0 5px;
-}
-
-.refresh-btn {
-  background: linear-gradient(to bottom, #ff7700, #ff5500);
-  color: white;
-  border: 1px solid #cc4400;
-  padding: 6px 12px;
-  border-radius: 3px;
-  font-size: 11px;
-  cursor: pointer;
-  font-weight: normal;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.refresh-btn:hover {
-  background: linear-gradient(to bottom, #ff8800, #ff6600);
-}
-
-.refresh-icon {
-  font-size: 12px;
-}
-
-.last-updated {
-  font-size: 10px;
-  color: var(--text-medium);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.update-icon {
-  font-size: 12px;
-}
-
-/* Header */
-.header {
-  text-align: center;
-  margin-bottom: 20px;
-  padding: 20px;
-  background: white;
-  border: 1px solid var(--sahadan-border);
-  border-radius: 5px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.header h1 {
-  color: var(--sahadan-green);
-  font-size: 24px;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.subtitle {
-  color: var(--text-medium);
-  font-size: 12px;
-}
-
-/* Table header improvements */
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: var(--sahadan-light-green);
-  border-bottom: 1px solid var(--sahadan-border);
-  font-size: 11px;
-}
-
-.matches-count {
-  color: var(--text-medium);
-  font-size: 10px;
 }
 
 /* No matches state */
@@ -534,6 +442,8 @@ body {
   text-align: center;
   padding: 40px;
   color: var(--text-medium);
+  background: white;
+  border: 1px solid var(--sahadan-border);
 }
 
 .no-matches-icon {
@@ -548,28 +458,27 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 1200px) {
-  .betting-table {
-    font-size: 10px;
-  }
-  
-  .teams-cell {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 768px) {
   .betting-table-container {
     overflow-x: auto;
   }
   
   .betting-table {
-    min-width: 1200px;
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .betting-container {
+    padding: 5px;
   }
   
-  #app {
-    padding: 5px;
+  .header-controls {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .control-group {
+    justify-content: center;
   }
 }
