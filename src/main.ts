@@ -1,0 +1,37 @@
+import './style.css';
+import { DataFetcher } from './services/dataFetcher';
+import { UIManager } from './services/uiManager';
+
+class SahadanApp {
+  private uiManager: UIManager;
+
+  constructor() {
+    this.uiManager = new UIManager();
+    this.uiManager.setRefreshHandler(() => this.loadData());
+    this.init();
+  }
+
+  private async init(): Promise<void> {
+    await this.loadData();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(() => {
+      this.loadData();
+    }, 5 * 60 * 1000);
+  }
+
+  private async loadData(): Promise<void> {
+    this.uiManager.showLoading();
+    
+    try {
+      const data = await DataFetcher.fetchMatches();
+      this.uiManager.showMatches(data.matches, data.timestamp);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.uiManager.showError(errorMessage);
+    }
+  }
+}
+
+// Initialize the application
+new SahadanApp();
