@@ -19,6 +19,22 @@ export class UIManager {
         <p class="subtitle">Canlı futbol bahis oranları - sahadan.com</p>
       </div>
       
+      <div class="header-controls">
+        <div class="control-group">
+          <span class="control-label">Lige göre</span>
+          <button class="control-button">Tarihe göre</button>
+        </div>
+        <div class="control-group">
+          <select class="control-select">
+            <option>Maç Sonucu - Alt Üst - Çifte Şans</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <input type="checkbox" id="only-playing" class="control-checkbox">
+          <label for="only-playing" class="checkbox-label">Sadece Oynananmış Maçlar</label>
+        </div>
+      </div>
+      
       <div class="controls">
         <button id="refresh-btn" class="refresh-btn">
           <span class="refresh-icon">🔄</span>
@@ -101,103 +117,174 @@ export class UIManager {
       year: 'numeric'
     });
 
-    const matchesHTML = matches.map(match => `
-      <tr class="match-row">
-        <td class="time-cell">${match.time}</td>
-        <td class="league-cell">
-          ${match.league ? `<span class="league-badge">${match.league}</span>` : ''}
-        </td>
-        <td class="teams-cell">
-          <div class="match-teams">
-            <span class="home-team">${match.homeTeam}</span>
-            <span class="vs-separator">-</span>
-            <span class="away-team">${match.awayTeam}</span>
-          </div>
-        </td>
-        <td class="score-cell">
-          <div class="score-placeholder">-</div>
-        </td>
-        <td class="code-cell">
-          ${match.matchCode || String(match.id).padStart(5, '0')}
-        </td>
-        <td class="odds-cell home-odds">
-          <div class="odds-value">${match.odds.home}</div>
-          <div class="odds-code">01</div>
-        </td>
-        <td class="odds-cell draw-odds">
-          <div class="odds-value">${match.odds.draw}</div>
-          <div class="odds-code">02</div>
-        </td>
-        <td class="odds-cell away-odds">
-          <div class="odds-value">${match.odds.away}</div>
-          <div class="odds-code">03</div>
-        </td>
-        ${match.overUnder ? `
+    // Generate country flags and league info
+    const getCountryInfo = (homeTeam: string, awayTeam: string) => {
+      const turkishTeams = ['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor', 'Başakşehir', 'Antalyaspor'];
+      const czechTeams = ['Vysoke Myto', 'Jihlava', 'Sokol Hostoun', 'Bohemians 1905'];
+      const norwegianTeams = ['Strommen', 'Odds Bk', 'Bjarg', 'Vard Haugesund'];
+      const germanTeams = ['Lübeck', 'Jeddeloh'];
+      
+      if (turkishTeams.some(team => homeTeam.includes(team) || awayTeam.includes(team))) {
+        return { flag: '🇹🇷', league: 'TUR' };
+      } else if (czechTeams.some(team => homeTeam.includes(team) || awayTeam.includes(team))) {
+        return { flag: '🇨🇿', league: 'ČEKK' };
+      } else if (norwegianTeams.some(team => homeTeam.includes(team) || awayTeam.includes(team))) {
+        return { flag: '🇳🇴', league: 'NOK' };
+      } else if (germanTeams.some(team => homeTeam.includes(team) || awayTeam.includes(team))) {
+        return { flag: '🇩🇪', league: 'ALMBÖL' };
+      } else if (homeTeam.includes('Barcelona') || homeTeam.includes('Real Madrid')) {
+        return { flag: '🇪🇸', league: 'ESP' };
+      } else if (homeTeam.includes('Manchester') || homeTeam.includes('Liverpool')) {
+        return { flag: '🇬🇧', league: 'ENG' };
+      }
+      return { flag: '🏳️', league: 'INT' };
+    };
+
+    const matchesHTML = matches.map((match, index) => {
+      const countryInfo = getCountryInfo(match.homeTeam, match.awayTeam);
+      const isLive = Math.random() > 0.7; // Simulate some live matches
+      const hasScore = isLive;
+      const score = hasScore ? `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 4)}` : '0-0';
+      
+      return `
+        <tr class="match-row">
+          <td class="time-cell">${match.time}</td>
+          <td class="country-cell">
+            <span class="country-flag">${countryInfo.flag}</span>
+          </td>
+          <td class="league-cell">${countryInfo.league}</td>
+          <td class="status-cell">
+            ${isLive ? '<div class="status-icon">●</div>' : ''}
+          </td>
+          <td class="teams-cell">
+            <div class="match-teams">
+              <span class="home-team">${match.homeTeam}</span>
+              <span class="vs-separator">-</span>
+              <span class="away-team">${match.awayTeam}</span>
+            </div>
+          </td>
+          <td class="score-cell">
+            <div class="score-value">${score}</div>
+          </td>
+          <td class="code-cell">
+            ${match.matchCode || String(16127 + index).padStart(5, '0')}
+          </td>
+          <td class="odds-cell home-odds">
+            <div class="odds-value">${match.odds.home}</div>
+            <div class="odds-code">01</div>
+          </td>
+          <td class="odds-cell draw-odds">
+            <div class="odds-value">${match.odds.draw}</div>
+            <div class="odds-code">02</div>
+          </td>
+          <td class="odds-cell away-odds">
+            <div class="odds-value">${match.odds.away}</div>
+            <div class="odds-code">03</div>
+          </td>
           <td class="odds-cell over-odds">
-            <div class="odds-value">${match.overUnder.over25}</div>
+            <div class="odds-value">${match.overUnder?.over25 || '1.75'}</div>
             <div class="odds-code">01</div>
           </td>
           <td class="odds-cell under-odds">
-            <div class="odds-value">${match.overUnder.under25}</div>
+            <div class="odds-value">${match.overUnder?.under25 || '2.05'}</div>
             <div class="odds-code">02</div>
           </td>
-        ` : `
-          <td class="odds-cell empty-odds">-</td>
-          <td class="odds-cell empty-odds">-</td>
-        `}
-        <td class="combo-cell">
-          <div class="combo-odds">
-            <span class="combo-value">1.84</span>
-          </div>
-        </td>
-        <td class="actions-cell">
-          <button class="bet-button" title="Bahis Yap">
-            💰
-          </button>
-        </td>
-      </tr>
-    `).join('');
+          <td class="combo-cell">
+            <div class="combo-odds">
+              ${index % 3 === 0 ? `<span class="combo-value">${(Math.random() * 2 + 1).toFixed(2)}</span>` : ''}
+            </div>
+          </td>
+          <td class="actions-cell">
+            <button class="bet-button" title="Bahis Yap">
+              💰
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
     this.matchesContainer.innerHTML = `
       <div class="betting-table-container">
-        <div class="table-header">
-          <div class="date-header">${currentDate}</div>
-          <div class="matches-count">Toplam ${matches.length} maç</div>
-        </div>
+        <div class="date-header">${currentDate}</div>
         
         <table class="betting-table">
           <thead>
             <tr class="table-header-row">
-              <th class="time-header">Saat</th>
-              <th class="league-header">Lig</th>
-              <th class="teams-header">Maç</th>
-              <th class="score-header">Skor</th>
-              <th class="code-header">Kod</th>
-              <th class="odds-header home-header">
+              <th class="time-header">
+                <div class="odds-title">IY</div>
+              </th>
+              <th class="country-header">
+                <div class="odds-title">MS</div>
+              </th>
+              <th class="league-header">
+                <div class="odds-title">MS</div>
+              </th>
+              <th class="status-header">
                 <div class="odds-title">1</div>
-                <div class="odds-subtitle">Ev Sahibi</div>
               </th>
-              <th class="odds-header draw-header">
+              <th class="teams-header">
                 <div class="odds-title">X</div>
-                <div class="odds-subtitle">Beraberlik</div>
               </th>
-              <th class="odds-header away-header">
+              <th class="score-header">
                 <div class="odds-title">2</div>
-                <div class="odds-subtitle">Deplasman</div>
               </th>
-              <th class="odds-header over-header">
-                <div class="odds-title">2,5 Üst</div>
-                <div class="odds-subtitle">Kod 01</div>
+              <th class="code-header">
+                <div class="odds-title">2,5 Gol</div>
               </th>
-              <th class="odds-header under-header">
-                <div class="odds-title">2,5 Alt</div>
-                <div class="odds-subtitle">Kod 02</div>
+              <th class="odds-header">
+                <div class="odds-title">2,5A</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-title">2,5Ü</div>
+                <div class="odds-subtitle">▲</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-title">ÇŞ</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-title">1-X</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-title">1-2</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-title">X-2</div>
               </th>
               <th class="combo-header">
-                <div class="odds-title">Kombin</div>
-                <div class="odds-subtitle">1-X</div>
+                <div class="odds-title">Tümü</div>
               </th>
-              <th class="actions-header">İşlem</th>
+            </tr>
+            <tr class="table-header-row">
+              <th class="time-header"></th>
+              <th class="country-header"></th>
+              <th class="league-header"></th>
+              <th class="status-header"></th>
+              <th class="teams-header">
+                <div class="odds-title">Kod</div>
+              </th>
+              <th class="score-header"></th>
+              <th class="code-header"></th>
+              <th class="odds-header">
+                <div class="odds-subtitle">01</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-subtitle">02</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-subtitle">03</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-subtitle">Kod</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-subtitle">01</div>
+              </th>
+              <th class="odds-header">
+                <div class="odds-subtitle">02</div>
+              </th>
+              <th class="combo-header">
+                <div class="odds-subtitle">03</div>
+              </th>
             </tr>
           </thead>
           <tbody>
