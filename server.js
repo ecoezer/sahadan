@@ -32,50 +32,123 @@ app.get('/api/matches', async (req, res) => {
     const html = await response.text();
     const root = parse(html);
     
-    // Parse the betting data from the HTML
     const matches = [];
     
-    // Look for match rows in the table
-    const matchRows = root.querySelectorAll('tr[class*="row"]');
+    // Look for the main betting table - sahadan uses specific table structure
+    const bettingTable = root.querySelector('table.bettingTable, table[id*="betting"], .iddaaTable table, table');
     
-    matchRows.forEach((row, index) => {
-      try {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 6) {
-          const timeCell = cells[0]?.text?.trim();
-          const teamsCell = cells[1]?.text?.trim();
-          const oddsCell1 = cells[2]?.text?.trim();
-          const oddsCell2 = cells[3]?.text?.trim();
-          const oddsCell3 = cells[4]?.text?.trim();
+    if (bettingTable) {
+      const rows = bettingTable.querySelectorAll('tr');
+      
+      rows.forEach((row, index) => {
+        try {
+          const cells = row.querySelectorAll('td');
           
-          if (timeCell && teamsCell && (oddsCell1 || oddsCell2 || oddsCell3)) {
-            // Split teams
-            const teams = teamsCell.split(' - ');
-            if (teams.length === 2) {
+          // Skip header rows and rows with insufficient data
+          if (cells.length < 5) return;
+          
+          // Extract data from cells - sahadan typically has: Time, Match, 1, X, 2, etc.
+          let timeText = '';
+          let matchText = '';
+          let odds1 = '';
+          let oddsX = '';
+          let odds2 = '';
+          
+          // Try different cell arrangements
+          for (let i = 0; i < Math.min(cells.length, 8); i++) {
+            const cellText = cells[i]?.text?.trim() || '';
+            
+            // Time pattern (HH:MM)
+            if (!timeText && /^\d{1,2}:\d{2}$/.test(cellText)) {
+              timeText = cellText;
+            }
+            
+            // Match pattern (Team vs Team or Team - Team)
+            if (!matchText && (cellText.includes(' - ') || cellText.includes(' vs ')) && cellText.length > 5) {
+              matchText = cellText;
+            }
+            
+            // Odds pattern (decimal numbers)
+            if (/^\d+[\.,]\d{2}$/.test(cellText)) {
+              if (!odds1) odds1 = cellText.replace(',', '.');
+              else if (!oddsX) oddsX = cellText.replace(',', '.');
+              else if (!odds2) odds2 = cellText.replace(',', '.');
+            }
+          }
+          
+          // If we found valid data, add the match
+          if (timeText && matchText && (odds1 || oddsX || odds2)) {
+            // Parse team names
+            let homeTeam = '';
+            let awayTeam = '';
+            
+            if (matchText.includes(' - ')) {
+              const teams = matchText.split(' - ');
+              homeTeam = teams[0]?.trim() || '';
+              awayTeam = teams[1]?.trim() || '';
+            } else if (matchText.includes(' vs ')) {
+              const teams = matchText.split(' vs ');
+              homeTeam = teams[0]?.trim() || '';
+              awayTeam = teams[1]?.trim() || '';
+            }
+            
+            if (homeTeam && awayTeam) {
               matches.push({
-                id: index + 1,
-                time: timeCell,
-                homeTeam: teams[0].trim(),
-                awayTeam: teams[1].trim(),
+                id: matches.length + 1,
+                time: timeText,
+                homeTeam: homeTeam,
+                awayTeam: awayTeam,
                 odds: {
-                  home: oddsCell1 || 'N/A',
-                  draw: oddsCell2 || 'N/A',
-                  away: oddsCell3 || 'N/A'
+                  home: odds1 || 'N/A',
+                  draw: oddsX || 'N/A',
+                  away: odds2 || 'N/A'
                 }
               });
             }
           }
+        } catch (error) {
+          console.log(`Error parsing row ${index}:`, error.message);
         }
-      } catch (error) {
-        console.log(`Error parsing row ${index}:`, error.message);
-      }
-    });
-
-    // If no matches found with the above method, try alternative parsing
+      });
+    }
+    
+    // Alternative parsing method - look for specific sahadan patterns
     if (matches.length === 0) {
-      console.log('No matches found with primary method, trying alternative...');
+      console.log('Trying alternative parsing method...');
       
-      // Generate sample data for demonstration
+      // Look for divs or spans containing match data
+      const matchElements = root.querySelectorAll('div[class*="match"], span[class*="match"], tr[class*="match"]');
+      
+      matchElements.forEach((element, index) => {
+        try {
+          const text = element.text || '';
+          const timeMatch = text.match(/(\d{1,2}:\d{2})/);
+          const teamMatch = text.match(/([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)\s*[-vs]\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)/);
+          const oddsMatches = text.match(/(\d+[\.,]\d{2})/g);
+          
+          if (timeMatch && teamMatch && oddsMatches && oddsMatches.length >= 3) {
+            matches.push({
+              id: matches.length + 1,
+              time: timeMatch[1],
+              homeTeam: teamMatch[1].trim(),
+              awayTeam: teamMatch[2].trim(),
+              odds: {
+                home: oddsMatches[0].replace(',', '.'),
+                draw: oddsMatches[1].replace(',', '.'),
+                away: oddsMatches[2].replace(',', '.')
+              }
+            });
+          }
+        } catch (error) {
+          console.log(`Error in alternative parsing for element ${index}:`, error.message);
+        }
+      });
+    }
+
+    // If still no matches found, provide sample data
+    if (matches.length === 0) {
+      console.log('No matches found with any parsing method, using sample data...');
+      
       const sampleMatches = [
         {
           id: 1,
@@ -97,6 +170,13 @@ app.get('/api/matches', async (req, res) => {
           homeTeam: 'Barcelona',
           awayTeam: 'Real Madrid',
           odds: { home: '2.45', draw: '3.10', away: '2.90' }
+        },
+        {
+          id: 4,
+          time: '21:30',
+          homeTeam: 'Manchester City',
+          awayTeam: 'Liverpool',
+          odds: { home: '2.20', draw: '3.30', away: '3.10' }
         }
       ];
       
