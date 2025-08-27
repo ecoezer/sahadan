@@ -190,6 +190,19 @@ body {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.data-source {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.source-icon {
+  font-size: 0.8rem;
 }
 
 .matches-grid {
@@ -232,6 +245,22 @@ body {
   font-size: 1rem;
 }
 
+.match-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.match-code {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
 .match-id {
   background: var(--background);
   color: var(--text-secondary);
@@ -239,6 +268,18 @@ body {
   border-radius: 1rem;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.league-badge {
+  background: linear-gradient(135deg, var(--success-color), #10b981);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
 }
 
 .teams {
@@ -304,6 +345,16 @@ body {
   letter-spacing: 0.05em;
 }
 
+.over-under-header {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.over-under-row {
+  grid-template-columns: 1fr 1fr;
+}
+
 .odds-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -339,6 +390,16 @@ body {
   background: #fffbeb;
 }
 
+.odd-item.over {
+  border-color: #8b5cf6;
+  background: #f3f4f6;
+}
+
+.odd-item.under {
+  border-color: #6366f1;
+  background: #f8fafc;
+}
+
 .odd-item:hover.home {
   background: #d1fae5;
 }
@@ -349,6 +410,14 @@ body {
 
 .odd-item:hover.away {
   background: #fef3c7;
+}
+
+.odd-item:hover.over {
+  background: #ede9fe;
+}
+
+.odd-item:hover.under {
+  background: #e0e7ff;
 }
 
 .odd-label {

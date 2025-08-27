@@ -8,9 +8,18 @@ export interface Match {
     draw: string;
     away: string;
   };
+  league?: string;
+  matchCode?: string;
+  status?: 'upcoming' | 'live' | 'finished';
+  overUnder?: {
+    over25: string;
+    under25: string;
+  };
 }
 
 export interface ApiResponse {
   matches: Match[];
   timestamp: string;
+  source: string;
+  totalMatches: number;
 }

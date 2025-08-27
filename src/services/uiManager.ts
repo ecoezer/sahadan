@@ -102,8 +102,13 @@ export class UIManager {
             <span class="time-icon">🕐</span>
             ${match.time}
           </div>
-          <div class="match-id">#${match.id}</div>
+          <div class="match-info">
+            ${match.matchCode ? `<span class="match-code">${match.matchCode}</span>` : ''}
+            <span class="match-id">#${match.id}</span>
+          </div>
         </div>
+        
+        ${match.league ? `<div class="league-badge">${match.league}</div>` : ''}
         
         <div class="teams">
           <div class="team home-team">
@@ -131,6 +136,20 @@ export class UIManager {
               <div class="odd-value">${match.odds.away}</div>
             </div>
           </div>
+          
+          ${match.overUnder ? `
+            <div class="odds-header over-under-header">Over/Under 2.5 Goals</div>
+            <div class="odds-row over-under-row">
+              <div class="odd-item over">
+                <div class="odd-label">Over 2.5</div>
+                <div class="odd-value">${match.overUnder.over25}</div>
+              </div>
+              <div class="odd-item under">
+                <div class="odd-label">Under 2.5</div>
+                <div class="odd-value">${match.overUnder.under25}</div>
+              </div>
+            </div>
+          ` : ''}
         </div>
       </div>
     `).join('');
@@ -138,6 +157,10 @@ export class UIManager {
     this.matchesContainer.innerHTML = `
       <div class="matches-header">
         <h2>Today's Matches (${matches.length})</h2>
+        <div class="data-source">
+          <span class="source-icon">🌐</span>
+          Data from sahadan.com
+        </div>
       </div>
       <div class="matches-grid">
         ${matchesHTML}
