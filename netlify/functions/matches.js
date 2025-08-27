@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const { parse } = require('node-html-parser');
+const { JSDOM } = require('jsdom');
 
 // Enhanced user agents to rotate
 const USER_AGENTS = [
@@ -19,59 +19,123 @@ function delay(ms) {
 
 function extractMatchData(html) {
   const matches = [];
-  const root = parse(html);
   
-  console.log('HTML length:', html.length);
-  console.log('Looking for sahadan.com specific patterns...');
-  
-  // Method 1: Look for table rows with betting data
-  const tables = root.querySelectorAll('table');
-  console.log(`Found ${tables.length} tables`);
-  
-  tables.forEach((table, tableIndex) => {
-    const rows = table.querySelectorAll('tr');
-    console.log(`Table ${tableIndex}: ${rows.length} rows`);
+  try {
+    console.log('HTML length:', html.length);
+    console.log('Parsing HTML with JSDOM...');
     
-    rows.forEach((row, rowIndex) => {
-      try {
-        const cells = row.querySelectorAll('td');
-        if (cells.length < 5) return;
-        
-        const rowText = row.text || '';
-        console.log(`Row ${rowIndex} text:`, rowText.substring(0, 100));
-        
-        // Look for time pattern
-        const timeMatch = rowText.match(/(\d{1,2}:\d{2})/);
-        
-        // Look for team names (Turkish characters included)
-        const teamPatterns = [
-          /([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)\s*[-–]\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)/,
-          /([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)\s*vs\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)/,
-          /([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)\s*:\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)/
-        ];
-        
-        let teamMatch = null;
-        for (const pattern of teamPatterns) {
-          teamMatch = rowText.match(pattern);
-          if (teamMatch) break;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+    
+    // Method 1: Look for sahadan.com specific table structure
+    const tables = document.querySelectorAll('table');
+    console.log(`Found ${tables.length} tables`);
+    
+    tables.forEach((table, tableIndex) => {
+      const rows = table.querySelectorAll('tr');
+      console.log(`Table ${tableIndex}: ${rows.length} rows`);
+      
+      rows.forEach((row, rowIndex) => {
+        try {
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 5) return;
+          
+          const rowText = row.textContent || '';
+          console.log(`Row ${rowIndex} text:`, rowText.substring(0, 100));
+          
+          // Look for time pattern (HH:MM)
+          const timeMatch = rowText.match(/(\d{1,2}:\d{2})/);
+          
+          // Look for team names with Turkish characters
+          const teamPatterns = [
+            /([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)\s*[-–]\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)/,
+            /([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)\s*vs\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)/i,
+            /([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)\s*:\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)/
+          ];
+          
+          let teamMatch = null;
+          for (const pattern of teamPatterns) {
+            teamMatch = rowText.match(pattern);
+            if (teamMatch) break;
+          }
+          
+          // Look for odds (Turkish format uses comma as decimal separator)
+          const oddsMatches = rowText.match(/(\d+[,\.]\d{1,2})/g);
+          
+          // Look for match codes (typically alphanumeric)
+          const codeMatch = rowText.match(/([A-Z0-9]{3,8})/);
+          
+          // Look for league information
+          const leagueCell = cells[0] || cells[1];
+          const leagueText = leagueCell ? leagueCell.textContent.trim() : '';
+          const league = leagueText.length > 0 && leagueText.length < 50 ? leagueText : null;
+          
+          if (timeMatch && teamMatch && oddsMatches && oddsMatches.length >= 3) {
+            const homeTeam = teamMatch[1].trim();
+            const awayTeam = teamMatch[2].trim();
+            
+            // Filter out invalid team names
+            if (homeTeam.length > 2 && awayTeam.length > 2 && 
+                homeTeam !== awayTeam && 
+                !homeTeam.match(/^\d+$/) && 
+                !awayTeam.match(/^\d+$/) &&
+                !homeTeam.includes('Oran') &&
+                !awayTeam.includes('Oran')) {
+              
+              // Look for Over/Under odds in the same row
+              let overUnder = null;
+              if (oddsMatches.length >= 5) {
+                overUnder = {
+                  over25: oddsMatches[3].replace(',', '.'),
+                  under25: oddsMatches[4].replace(',', '.')
+                };
+              }
+              
+              matches.push({
+                id: matches.length + 1,
+                time: timeMatch[1],
+                homeTeam: homeTeam,
+                awayTeam: awayTeam,
+                odds: {
+                  home: oddsMatches[0].replace(',', '.'),
+                  draw: oddsMatches[1] ? oddsMatches[1].replace(',', '.') : 'N/A',
+                  away: oddsMatches[2] ? oddsMatches[2].replace(',', '.') : 'N/A'
+                },
+                league: league,
+                matchCode: codeMatch ? codeMatch[1] : null,
+                status: 'upcoming',
+                overUnder: overUnder
+              });
+              
+              console.log(`Found match: ${homeTeam} vs ${awayTeam} at ${timeMatch[1]}`);
+            }
+          }
+        } catch (error) {
+          console.log(`Error parsing row ${rowIndex}:`, error.message);
         }
+      });
+    });
+    
+    // Method 2: Look for div-based structure if no matches found
+    if (matches.length === 0) {
+      console.log('Trying div-based parsing...');
+      
+      const matchDivs = document.querySelectorAll('div[class*="match"], div[class*="game"], .program-row');
+      console.log(`Found ${matchDivs.length} potential match divs`);
+      
+      matchDivs.forEach((div, index) => {
+        const text = div.textContent || '';
+        if (text.length < 10) return;
         
-        // Look for odds (Turkish format uses comma as decimal separator)
-        const oddsMatches = rowText.match(/(\d+[,\.]\d{1,2})/g);
-        
-        // Look for match codes (typically alphanumeric)
-        const codeMatch = rowText.match(/([A-Z0-9]{3,8})/);
+        const timeMatch = text.match(/(\d{1,2}:\d{2})/);
+        const teamMatch = text.match(/([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)\s*[-–vs:]\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)/);
+        const oddsMatches = text.match(/(\d+[,\.]\d{1,2})/g);
         
         if (timeMatch && teamMatch && oddsMatches && oddsMatches.length >= 3) {
           const homeTeam = teamMatch[1].trim();
           const awayTeam = teamMatch[2].trim();
           
-          // Filter out invalid team names
-          if (homeTeam.length > 2 && awayTeam.length > 2 && 
-              homeTeam !== awayTeam && 
-              !homeTeam.match(/^\d+$/) && 
-              !awayTeam.match(/^\d+$/)) {
-            
+          if (homeTeam.length > 2 && awayTeam.length > 2 && homeTeam !== awayTeam) {
             matches.push({
               id: matches.length + 1,
               time: timeMatch[1],
@@ -79,82 +143,58 @@ function extractMatchData(html) {
               awayTeam: awayTeam,
               odds: {
                 home: oddsMatches[0].replace(',', '.'),
-                draw: oddsMatches[1] ? oddsMatches[1].replace(',', '.') : 'N/A',
-                away: oddsMatches[2] ? oddsMatches[2].replace(',', '.') : 'N/A'
+                draw: oddsMatches[1].replace(',', '.'),
+                away: oddsMatches[2].replace(',', '.')
               },
-              matchCode: codeMatch ? codeMatch[1] : null,
               status: 'upcoming'
             });
             
-            console.log(`Found match: ${homeTeam} vs ${awayTeam} at ${timeMatch[1]}`);
+            console.log(`Found match in div: ${homeTeam} vs ${awayTeam}`);
           }
         }
-      } catch (error) {
-        console.log(`Error parsing row ${rowIndex}:`, error.message);
-      }
-    });
-  });
-  
-  // Method 2: Look for div-based structure
-  if (matches.length === 0) {
-    console.log('Trying div-based parsing...');
+      });
+    }
     
-    const divs = root.querySelectorAll('div');
-    console.log(`Found ${divs.length} divs`);
-    
-    divs.forEach((div, index) => {
-      const text = div.text || '';
-      if (text.length < 10) return;
+    // Method 3: Look for specific sahadan.com CSS selectors
+    if (matches.length === 0) {
+      console.log('Trying sahadan-specific selectors...');
       
-      const timeMatch = text.match(/(\d{1,2}:\d{2})/);
-      const teamMatch = text.match(/([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)\s*[-–vs:]\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s]+)/);
-      const oddsMatches = text.match(/(\d+[,\.]\d{1,2})/g);
+      const programRows = document.querySelectorAll('.program tr, table.program tr, .iddaa-program tr');
+      console.log(`Found ${programRows.length} program rows`);
       
-      if (timeMatch && teamMatch && oddsMatches && oddsMatches.length >= 3) {
-        const homeTeam = teamMatch[1].trim();
-        const awayTeam = teamMatch[2].trim();
+      programRows.forEach((row, index) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 3) return;
         
-        if (homeTeam.length > 2 && awayTeam.length > 2) {
-          matches.push({
-            id: matches.length + 1,
-            time: timeMatch[1],
-            homeTeam: homeTeam,
-            awayTeam: awayTeam,
-            odds: {
-              home: oddsMatches[0].replace(',', '.'),
-              draw: oddsMatches[1].replace(',', '.'),
-              away: oddsMatches[2].replace(',', '.')
-            },
-            status: 'upcoming'
-          });
+        const timeCell = cells.find(cell => cell.textContent.match(/\d{1,2}:\d{2}/));
+        const teamCell = cells.find(cell => cell.textContent.includes('-') || cell.textContent.includes('vs'));
+        const oddsCell = cells.find(cell => cell.textContent.match(/\d+[,\.]\d{2}/));
+        
+        if (timeCell && teamCell && oddsCell) {
+          const timeMatch = timeCell.textContent.match(/(\d{1,2}:\d{2})/);
+          const teamMatch = teamCell.textContent.match(/([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)\s*[-–vs]\s*([A-Za-zÇĞıİÖŞÜçğıöşü\s\.]+)/);
+          const oddsMatches = oddsCell.textContent.match(/(\d+[,\.]\d{1,2})/g);
           
-          console.log(`Found match in div: ${homeTeam} vs ${awayTeam}`);
-        }
-      }
-    });
-  }
-  
-  // Method 3: Look for script tags with JSON data
-  if (matches.length === 0) {
-    console.log('Looking for JSON data in script tags...');
-    
-    const scripts = root.querySelectorAll('script');
-    scripts.forEach(script => {
-      const content = script.innerHTML;
-      if (content && (content.includes('match') || content.includes('iddaa') || content.includes('program'))) {
-        console.log('Found potential data in script tag:', content.substring(0, 200));
-        
-        // Try to extract JSON-like structures
-        try {
-          const jsonMatches = content.match(/\{[^{}]*"[^"]*"[^{}]*\}/g);
-          if (jsonMatches) {
-            console.log('Found JSON-like structures:', jsonMatches.length);
+          if (timeMatch && teamMatch && oddsMatches && oddsMatches.length >= 3) {
+            matches.push({
+              id: matches.length + 1,
+              time: timeMatch[1],
+              homeTeam: teamMatch[1].trim(),
+              awayTeam: teamMatch[2].trim(),
+              odds: {
+                home: oddsMatches[0].replace(',', '.'),
+                draw: oddsMatches[1].replace(',', '.'),
+                away: oddsMatches[2].replace(',', '.')
+              },
+              status: 'upcoming'
+            });
           }
-        } catch (error) {
-          console.log('Error parsing script content:', error.message);
         }
-      }
-    });
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error parsing HTML with JSDOM:', error);
   }
   
   return matches;
@@ -303,7 +343,8 @@ exports.handler = async (event, context) => {
         debug: {
           htmlLength: html.length,
           extractedMatches: matches.length,
-          sampleData: matches.length === 5
+          sampleData: matches.length === 5,
+          parser: 'JSDOM'
         }
       })
     };
@@ -344,7 +385,8 @@ exports.handler = async (event, context) => {
         error: error.message,
         debug: {
           fallbackData: true,
-          originalError: error.message
+          originalError: error.message,
+          parser: 'JSDOM'
         }
       })
     };
