@@ -1,4 +1,4 @@
-import { SahadanScraper } from './scraper';
+import { SahadanScraper, type MatchData } from './scraper';
 import './style.css';
 
 class ScraperApp {
@@ -31,6 +31,9 @@ class ScraperApp {
         
         <div class="status">
           <div id="statusText">Ready to scrape</div>
+          <div class="browser-notice">
+            ⚠️ Running in browser mode with mock data. For real scraping, use a Node.js backend.
+          </div>
           <div id="progress" class="progress-bar"></div>
         </div>
         
@@ -63,7 +66,7 @@ class ScraperApp {
 
     try {
       await this.scraper.initialize();
-      this.updateStatus('🌐 Scraping sahadan.com...');
+      this.updateStatus('🌐 Running mock scraper...');
       
       const matches = await this.scraper.scrapeIddaaProgram();
       
@@ -114,7 +117,7 @@ class ScraperApp {
     console.log(message);
   }
 
-  private displayResults(matches: any[]): void {
+  private displayResults(matches: MatchData[]): void {
     const container = document.getElementById('dataContainer');
     if (!container) return;
 

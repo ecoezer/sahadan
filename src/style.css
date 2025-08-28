@@ -92,6 +92,16 @@ header p {
   margin-bottom: 15px;
 }
 
+.browser-notice {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  border: 1px solid #ffeaa7;
+}
+
 .progress-bar {
   height: 4px;
   background: #e0e0e0;

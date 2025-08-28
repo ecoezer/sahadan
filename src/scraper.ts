@@ -1,141 +1,66 @@
-import { Builder, By, WebDriver, until } from 'selenium-webdriver';
-import chrome from 'selenium-webdriver/chrome';
+// Mock scraper for browser environment
+// Note: Real Selenium scraping requires a backend server
+
+export interface MatchData {
+  teams: string;
+  odds: Record<string, string>;
+  time: string;
+  league: string;
+}
 
 export class SahadanScraper {
-  private driver: WebDriver | null = null;
+  private isInitialized = false;
 
   async initialize(): Promise<void> {
-    console.log('🚀 Initializing Selenium WebDriver...');
+    console.log('🚀 Initializing mock scraper (browser environment)...');
     
-    const options = new chrome.Options();
-    options.addArguments('--headless'); // Run in background
-    options.addArguments('--no-sandbox');
-    options.addArguments('--disable-dev-shm-usage');
-    options.addArguments('--disable-gpu');
-    options.addArguments('--window-size=1920,1080');
+    // Simulate initialization delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    this.driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(options)
-      .build();
-      
-    console.log('✅ WebDriver initialized successfully');
+    this.isInitialized = true;
+    console.log('✅ Mock scraper initialized successfully');
   }
 
-  async scrapeIddaaProgram(): Promise<any[]> {
-    if (!this.driver) {
-      throw new Error('WebDriver not initialized. Call initialize() first.');
+  async scrapeIddaaProgram(): Promise<MatchData[]> {
+    if (!this.isInitialized) {
+      throw new Error('Scraper not initialized. Call initialize() first.');
     }
 
-    console.log('🌐 Navigating to sahadan.com Iddaa archive...');
+    console.log('🌐 Simulating scraping of sahadan.com...');
     
-    try {
-      // Navigate to the page
-      await this.driver.get('https://arsiv.sahadan.com/Iddaa/program.aspx');
-      
-      // Wait for page to load
-      await this.driver.wait(until.titleContains('İddaa'), 10000);
-      console.log('📄 Page loaded successfully');
-
-      // Wait for the main content to load
-      await this.driver.wait(until.elementLocated(By.className('iddaa-program')), 10000);
-      
-      // Extract betting data
-      const matches = await this.extractMatches();
-      
-      console.log(`📊 Found ${matches.length} matches`);
-      return matches;
-      
-    } catch (error) {
-      console.error('❌ Error scraping data:', error);
-      throw error;
-    }
-  }
-
-  private async extractMatches(): Promise<any[]> {
-    if (!this.driver) return [];
-
-    const matches: any[] = [];
+    // Simulate scraping delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    try {
-      // Find match rows (adjust selector based on actual HTML structure)
-      const matchElements = await this.driver.findElements(By.css('.match-row, .iddaa-match, tr[class*="match"]'));
-      
-      for (const matchElement of matchElements) {
-        try {
-          const matchData = {
-            teams: await this.extractTeams(matchElement),
-            odds: await this.extractOdds(matchElement),
-            time: await this.extractMatchTime(matchElement),
-            league: await this.extractLeague(matchElement)
-          };
-          
-          if (matchData.teams) {
-            matches.push(matchData);
-          }
-        } catch (error) {
-          console.warn('⚠️ Error extracting match data:', error);
-        }
+    // Return mock data for demonstration
+    const mockMatches: MatchData[] = [
+      {
+        teams: "Galatasaray vs Fenerbahçe",
+        odds: { "1": "2.10", "X": "3.20", "2": "3.50" },
+        time: "20:00",
+        league: "Süper Lig"
+      },
+      {
+        teams: "Beşiktaş vs Trabzonspor",
+        odds: { "1": "1.85", "X": "3.40", "2": "4.20" },
+        time: "17:30",
+        league: "Süper Lig"
+      },
+      {
+        teams: "Barcelona vs Real Madrid",
+        odds: { "1": "2.50", "X": "3.10", "2": "2.80" },
+        time: "22:00",
+        league: "La Liga"
       }
-      
-    } catch (error) {
-      console.error('❌ Error finding match elements:', error);
-    }
+    ];
     
-    return matches;
-  }
-
-  private async extractTeams(element: any): Promise<string | null> {
-    try {
-      const teamElement = await element.findElement(By.css('.team-names, .teams, td[class*="team"]'));
-      return await teamElement.getText();
-    } catch {
-      return null;
-    }
-  }
-
-  private async extractOdds(element: any): Promise<any> {
-    const odds: any = {};
-    
-    try {
-      // Extract common betting odds (1X2, Over/Under, etc.)
-      const oddElements = await element.findElements(By.css('.odd, .oran, td[class*="odd"]'));
-      
-      for (let i = 0; i < oddElements.length; i++) {
-        const oddText = await oddElements[i].getText();
-        if (oddText && oddText.trim()) {
-          odds[`odd_${i + 1}`] = oddText.trim();
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Error extracting odds:', error);
-    }
-    
-    return odds;
-  }
-
-  private async extractMatchTime(element: any): Promise<string | null> {
-    try {
-      const timeElement = await element.findElement(By.css('.time, .match-time, td[class*="time"]'));
-      return await timeElement.getText();
-    } catch {
-      return null;
-    }
-  }
-
-  private async extractLeague(element: any): Promise<string | null> {
-    try {
-      const leagueElement = await element.findElement(By.css('.league, .lig, td[class*="league"]'));
-      return await leagueElement.getText();
-    } catch {
-      return null;
-    }
+    console.log(`📊 Mock scraping completed! Found ${mockMatches.length} matches`);
+    return mockMatches;
   }
 
   async close(): Promise<void> {
-    if (this.driver) {
-      await this.driver.quit();
-      console.log('🔒 WebDriver closed');
+    if (this.isInitialized) {
+      console.log('🔒 Mock scraper closed');
+      this.isInitialized = false;
     }
   }
 }
