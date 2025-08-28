@@ -165,10 +165,26 @@ function extractMatchData(html) {
 }
 
 function generateSampleDataForDate(requestedDate) {
-  // Generate different sample data based on the requested date
-  const dateObj = new Date(requestedDate);
+  console.log('Generating sample data for date:', requestedDate);
+  
+  // Parse the date properly - handle both YYYY-MM-DD and DD.MM.YYYY formats
+  let dateObj;
+  if (requestedDate && requestedDate.includes('-')) {
+    // YYYY-MM-DD format
+    dateObj = new Date(requestedDate + 'T12:00:00');
+  } else if (requestedDate && requestedDate.includes('.')) {
+    // DD.MM.YYYY format
+    const [day, month, year] = requestedDate.split('.');
+    dateObj = new Date(year, month - 1, day, 12, 0, 0);
+  } else {
+    // Default to today
+    dateObj = new Date();
+  }
+  
+  console.log('Parsed date object:', dateObj);
   const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const dateString = dateObj.toISOString().split('T')[0];
+  console.log('Day of week:', dayOfWeek, 'Date string:', dateString);
   
   // Create different match sets based on the date
   const matchSets = {
@@ -178,7 +194,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '14:00',
         homeTeam: 'Galatasaray',
         awayTeam: 'Fenerbahçe',
-        odds: { home: '2.10', draw: '3.20', away: '3.50' },
+        odds: { home: '2.15', draw: '3.25', away: '3.45' },
         league: 'Süper Lig',
         matchCode: 'GS001',
         status: 'upcoming'
@@ -188,7 +204,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '17:00',
         homeTeam: 'Beşiktaş',
         awayTeam: 'Trabzonspor',
-        odds: { home: '1.85', draw: '3.40', away: '4.20' },
+        odds: { home: '1.90', draw: '3.35', away: '4.15' },
         league: 'Süper Lig',
         matchCode: 'BJK002',
         status: 'upcoming'
@@ -197,10 +213,10 @@ function generateSampleDataForDate(requestedDate) {
     1: [ // Monday - European matches
       {
         id: 1,
-        time: '20:00',
+        time: '21:00',
         homeTeam: 'Barcelona',
         awayTeam: 'Real Madrid',
-        odds: { home: '2.45', draw: '3.10', away: '2.90' },
+        odds: { home: '2.50', draw: '3.15', away: '2.85' },
         league: 'La Liga',
         matchCode: 'BAR001',
         status: 'upcoming'
@@ -210,7 +226,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '22:30',
         homeTeam: 'Manchester City',
         awayTeam: 'Liverpool',
-        odds: { home: '2.20', draw: '3.30', away: '3.10' },
+        odds: { home: '2.25', draw: '3.25', away: '3.05' },
         league: 'Premier League',
         matchCode: 'MCI002',
         status: 'upcoming'
@@ -219,10 +235,10 @@ function generateSampleDataForDate(requestedDate) {
     2: [ // Tuesday - Champions League
       {
         id: 1,
-        time: '20:00',
+        time: '21:00',
         homeTeam: 'Bayern Munich',
         awayTeam: 'PSG',
-        odds: { home: '1.95', draw: '3.60', away: '3.80' },
+        odds: { home: '2.00', draw: '3.55', away: '3.75' },
         league: 'Champions League',
         matchCode: 'BAY001',
         status: 'upcoming',
@@ -233,7 +249,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '20:00',
         homeTeam: 'Inter Milan',
         awayTeam: 'Arsenal',
-        odds: { home: '2.30', draw: '3.20', away: '3.00' },
+        odds: { home: '2.35', draw: '3.15', away: '2.95' },
         league: 'Champions League',
         matchCode: 'INT002',
         status: 'upcoming'
@@ -242,10 +258,10 @@ function generateSampleDataForDate(requestedDate) {
     3: [ // Wednesday - Turkish Cup
       {
         id: 1,
-        time: '19:00',
+        time: '19:30',
         homeTeam: 'Başakşehir',
         awayTeam: 'Antalyaspor',
-        odds: { home: '1.95', draw: '3.30', away: '3.80' },
+        odds: { home: '2.05', draw: '3.25', away: '3.70' },
         league: 'Türkiye Kupası',
         matchCode: 'BSK001',
         status: 'upcoming'
@@ -255,7 +271,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '21:30',
         homeTeam: 'Konyaspor',
         awayTeam: 'Sivasspor',
-        odds: { home: '2.40', draw: '3.10', away: '2.95' },
+        odds: { home: '2.45', draw: '3.05', away: '2.90' },
         league: 'Türkiye Kupası',
         matchCode: 'KON002',
         status: 'upcoming'
@@ -264,10 +280,10 @@ function generateSampleDataForDate(requestedDate) {
     4: [ // Thursday - Europa League
       {
         id: 1,
-        time: '19:55',
+        time: '20:00',
         homeTeam: 'Atletico Madrid',
         awayTeam: 'Lazio',
-        odds: { home: '1.70', draw: '3.80', away: '4.50' },
+        odds: { home: '1.75', draw: '3.75', away: '4.40' },
         league: 'Europa League',
         matchCode: 'ATL001',
         status: 'upcoming'
@@ -277,7 +293,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '22:00',
         homeTeam: 'West Ham',
         awayTeam: 'Fiorentina',
-        odds: { home: '2.60', draw: '3.40', away: '2.70' },
+        odds: { home: '2.65', draw: '3.35', away: '2.65' },
         league: 'Europa League',
         matchCode: 'WHU002',
         status: 'upcoming'
@@ -286,14 +302,24 @@ function generateSampleDataForDate(requestedDate) {
     5: [ // Friday - Bundesliga
       {
         id: 1,
-        time: '21:30',
+        time: '20:30',
         homeTeam: 'Borussia Dortmund',
         awayTeam: 'RB Leipzig',
-        odds: { home: '2.10', draw: '3.50', away: '3.20' },
+        odds: { home: '2.15', draw: '3.45', away: '3.15' },
         league: 'Bundesliga',
         matchCode: 'BVB001',
         status: 'upcoming',
         overUnder: { over25: '1.65', under25: '2.25' }
+      },
+      {
+        id: 2,
+        time: '22:30',
+        homeTeam: 'Bayer Leverkusen',
+        awayTeam: 'Eintracht Frankfurt',
+        odds: { home: '1.80', draw: '3.60', away: '4.00' },
+        league: 'Bundesliga',
+        matchCode: 'B04002',
+        status: 'upcoming'
       }
     ],
     6: [ // Saturday - Premier League
@@ -302,7 +328,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '14:30',
         homeTeam: 'Chelsea',
         awayTeam: 'Tottenham',
-        odds: { home: '2.25', draw: '3.40', away: '3.00' },
+        odds: { home: '2.30', draw: '3.35', away: '2.95' },
         league: 'Premier League',
         matchCode: 'CHE001',
         status: 'upcoming'
@@ -312,7 +338,7 @@ function generateSampleDataForDate(requestedDate) {
         time: '17:00',
         homeTeam: 'Arsenal',
         awayTeam: 'Manchester United',
-        odds: { home: '1.90', draw: '3.60', away: '3.90' },
+        odds: { home: '1.95', draw: '3.55', away: '3.85' },
         league: 'Premier League',
         matchCode: 'ARS002',
         status: 'upcoming'
@@ -322,31 +348,48 @@ function generateSampleDataForDate(requestedDate) {
         time: '19:30',
         homeTeam: 'Newcastle',
         awayTeam: 'Brighton',
-        odds: { home: '1.75', draw: '3.70', away: '4.30' },
+        odds: { home: '1.80', draw: '3.65', away: '4.25' },
         league: 'Premier League',
         matchCode: 'NEW003',
+        status: 'upcoming'
+      },
+      {
+        id: 4,
+        time: '21:45',
+        homeTeam: 'Aston Villa',
+        awayTeam: 'West Ham',
+        odds: { home: '2.10', draw: '3.30', away: '3.40' },
+        league: 'Premier League',
+        matchCode: 'AVL004',
         status: 'upcoming'
       }
     ]
   };
   
   // Get matches for the day of week, or default to Sunday matches
-  let matches = matchSets[dayOfWeek] || matchSets[0];
+  let matches = JSON.parse(JSON.stringify(matchSets[dayOfWeek] || matchSets[0]));
+  console.log('Selected matches for day', dayOfWeek, ':', matches.length, 'matches');
   
   // Add some variation based on the specific date
-  const dateHash = dateString.split('-').reduce((acc, part) => acc + parseInt(part), 0);
-  const variation = dateHash % 3;
+  const day = dateObj.getDate();
+  const month = dateObj.getMonth() + 1;
+  const year = dateObj.getFullYear();
+  const dateHash = (day * 31 + month * 12 + year) % 100;
+  const variation = (dateHash % 5) * 0.05; // 0, 0.05, 0.10, 0.15, or 0.20
+  
+  console.log('Date hash:', dateHash, 'Variation:', variation);
   
   // Modify odds slightly based on date variation
   matches = matches.map(match => ({
     ...match,
     odds: {
-      home: (parseFloat(match.odds.home) + (variation * 0.1)).toFixed(2),
-      draw: (parseFloat(match.odds.draw) + (variation * 0.05)).toFixed(2),
-      away: (parseFloat(match.odds.away) + (variation * 0.1)).toFixed(2)
+      home: (parseFloat(match.odds.home) + variation).toFixed(2),
+      draw: (parseFloat(match.odds.draw) + variation * 0.5).toFixed(2),
+      away: (parseFloat(match.odds.away) + variation).toFixed(2)
     }
   }));
   
+  console.log('Final matches with variations:', matches.map(m => `${m.homeTeam} vs ${m.awayTeam} (${m.odds.home})`));
   return matches;
 }
 
