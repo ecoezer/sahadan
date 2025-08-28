@@ -8,6 +8,7 @@ export class UIManager {
   private lastUpdated!: HTMLElement;
   private currentMatches: any[] = [];
   private selectedDate: string = this.getTodayString();
+  private onDateChange: (date: string) => void = () => {};
 
   constructor() {
     this.container = document.getElementById('app')!;
