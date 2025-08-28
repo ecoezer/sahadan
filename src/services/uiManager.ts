@@ -444,23 +444,24 @@ export class UIManager {
             <div class="odds-code">03</div>
           </td>
           <td class="odds-cell">
-            ${match.over25 ? `<div class="odds-code">${match.over25}</div>` : ''}
-            ${match.under25 ? `<div class="odds-value">${match.under25}</div>` : ''}
-            ${match.under25 ? `<div class="odds-code">01</div>` : ''}
+            <div class="odds-value">${match.over25}</div>
+            <div class="odds-code">01</div>
           </td>
           <td class="odds-cell">
-            <div class="odds-value red-odds">2,5Ü</div>
-            <div class="odds-code">02▲</div>
+            <div class="odds-value">${match.under25}</div>
+            <div class="odds-code">02</div>
           </td>
           <td class="odds-cell">
-            ${match.doubleChance1X ? `<div class="odds-code">${match.doubleChance1X}</div>` : ''}
-            ${match.doubleChance12 ? `<div class="odds-value">${match.doubleChance12}</div>` : ''}
+            <div class="odds-value">${match.doubleChance1X}</div>
+            <div class="odds-code">01</div>
           </td>
           <td class="odds-cell">
-            ${match.doubleChance12 ? `<div class="odds-value">${match.doubleChance12}</div>` : ''}
+            <div class="odds-value">${match.doubleChance12}</div>
+            <div class="odds-code">02</div>
           </td>
           <td class="odds-cell">
-            ${match.doubleChanceX2 ? `<div class="odds-value">${match.doubleChanceX2}</div>` : ''}
+            <div class="odds-value">${match.doubleChanceX2}</div>
+            <div class="odds-code">03</div>
           </td>
           <td class="all-cell">
             <button class="bet-all-button">💰</button>
@@ -517,23 +518,24 @@ export class UIManager {
             <div class="odds-code">03</div>
           </td>
           <td class="odds-cell">
-            ${match.over25 ? `<div class="odds-code">${match.over25}</div>` : ''}
-            ${match.under25 ? `<div class="odds-value">${match.under25}</div>` : ''}
-            ${match.under25 ? `<div class="odds-code">01</div>` : ''}
+            <div class="odds-value">${match.over25}</div>
+            <div class="odds-code">01</div>
           </td>
           <td class="odds-cell">
-            <div class="odds-value red-odds">2,5Ü</div>
-            <div class="odds-code">02▲</div>
+            <div class="odds-value">${match.under25}</div>
+            <div class="odds-code">02</div>
           </td>
           <td class="odds-cell">
-            ${match.doubleChance1X ? `<div class="odds-code">${match.doubleChance1X}</div>` : ''}
-            ${match.doubleChance12 ? `<div class="odds-value">${match.doubleChance12}</div>` : ''}
+            <div class="odds-value">${match.doubleChance1X}</div>
+            <div class="odds-code">01</div>
           </td>
           <td class="odds-cell">
-            ${match.doubleChance12 ? `<div class="odds-value">${match.doubleChance12}</div>` : ''}
+            <div class="odds-value">${match.doubleChance12}</div>
+            <div class="odds-code">02</div>
           </td>
           <td class="odds-cell">
-            ${match.doubleChanceX2 ? `<div class="odds-value">${match.doubleChanceX2}</div>` : ''}
+            <div class="odds-value">${match.doubleChanceX2}</div>
+            <div class="odds-code">03</div>
           </td>
           <td class="all-cell">
             <button class="bet-all-button">💰</button>
