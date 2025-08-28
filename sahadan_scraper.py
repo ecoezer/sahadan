@@ -18,6 +18,16 @@ class SahadanScraper:
         self.options.add_argument('--disable-dev-shm-usage')
         self.options.add_argument('--disable-gpu')
         self.options.add_argument('--window-size=1920,1080')
+        
+        # Railway-specific optimizations
+        if os.environ.get('RAILWAY_ENVIRONMENT'):
+            self.options.add_argument('--single-process')
+            self.options.add_argument('--disable-background-timer-throttling')
+            self.options.add_argument('--disable-renderer-backgrounding')
+            self.options.add_argument('--disable-backgrounding-occluded-windows')
+            self.options.add_argument('--disable-extensions')
+            self.options.add_argument('--disable-plugins')
+        
         self.driver = None
         
     def start_driver(self):
