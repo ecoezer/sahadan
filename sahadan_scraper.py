@@ -22,13 +22,11 @@ class SahadanScraper:
         
         # Railway-specific optimizations
         if os.environ.get('RAILWAY_ENVIRONMENT'):
-            self.options.add_argument('--single-process')
             self.options.add_argument('--disable-background-timer-throttling')
             self.options.add_argument('--disable-renderer-backgrounding')
             self.options.add_argument('--disable-backgrounding-occluded-windows')
             self.options.add_argument('--disable-extensions')
             self.options.add_argument('--disable-plugins')
-            self.options.binary_location = '/nix/store/*/bin/chromium'
         
         self.driver = None
         

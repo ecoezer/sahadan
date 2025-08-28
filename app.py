@@ -23,14 +23,14 @@ def get_chrome_options():
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-plugins')
     options.add_argument('--disable-images')
-    options.add_argument('--single-process')
     options.add_argument('--disable-background-timer-throttling')
     options.add_argument('--disable-renderer-backgrounding')
     options.add_argument('--disable-backgrounding-occluded-windows')
     
     # Railway-specific Chrome binary path
     if os.environ.get('RAILWAY_ENVIRONMENT'):
-        options.binary_location = '/nix/store/*/bin/chromium'
+        # Let Railway find Chrome automatically
+        pass
     
     return options
 
