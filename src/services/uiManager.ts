@@ -5,7 +5,6 @@ export class UIManager {
   private loadingElement!: HTMLElement;
   private errorElement!: HTMLElement;
   private matchesContainer!: HTMLElement;
-  private lastUpdated!: HTMLElement;
   private currentMatches: any[] = [];
   private selectedDate: string = this.getTodayString();
 
@@ -334,17 +333,18 @@ export class UIManager {
 
 
   private updateTimestamp(timestamp: string): void {
-    const date = new Date(timestamp);
-    const formattedTime = date.toLocaleString('tr-TR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    
-    this.lastUpdated.innerHTML = `
-      <span class="update-icon">🕒</span>
-      Son güncelleme: ${formattedTime}
-    `;
+    // Update timestamp display in the date header
+    const dateHeader = document.querySelector('.date-header');
+    if (dateHeader) {
+      const date = new Date(timestamp);
+      const formattedTime = date.toLocaleString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      dateHeader.innerHTML = `${this.selectedDate} <span style="font-size: 10px; color: #666; margin-left: 10px;">🕒 Son güncelleme: ${formattedTime}</span>`;
+    }
   }
 
   private onRefresh: () => void = () => {};
