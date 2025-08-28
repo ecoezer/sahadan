@@ -3,134 +3,120 @@ const fetch = require('node-fetch');
 // Sample match data generator based on date
 function generateMatchesForDate(dateStr) {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+  today.setHours(0, 0, 0, 0);
   
   console.log('🗓️ Processing date:', dateStr);
   
-  // Parse the date string - handle DD.MM.YYYY format from UI  
+  // Parse DD.MM.YYYY format from UI
   let selectedDate;
-  if (dateStr.includes('.')) {
-    // DD.MM.YYYY format - this is what we receive from UI
-    const [day, month, year] = dateStr.split('.');
-    selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  } else if (dateStr.includes('-')) {
-    // YYYY-MM-DD format fallback
-    selectedDate = new Date(dateStr);
-  } else {
-    // Fallback to today
-    selectedDate = new Date();
-  }
-  selectedDate.setHours(0, 0, 0, 0); // Reset time to start of day
+  const [day, month, year] = dateStr.split('.');
+  selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  selectedDate.setHours(0, 0, 0, 0);
   
   const daysDiff = Math.floor((selectedDate - today) / (1000 * 60 * 60 * 24));
   const dayOfWeek = selectedDate.getDay();
   
   console.log('📅 Date parsing result:', {
     input: dateStr,
-    selectedDate: selectedDate.toISOString().split('T')[0],
-    today: today.toISOString().split('T')[0],
+    selectedDate: selectedDate.toDateString(),
+    today: today.toDateString(),
     daysDiff: daysDiff,
     dayOfWeek: dayOfWeek,
-    dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
-    parsedDay: parseInt(dateStr.split('.')[0]),
-    parsedMonth: parseInt(dateStr.split('.')[1]),
-    parsedYear: parseInt(dateStr.split('.')[2])
+    dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
   });
   
-  // Different match sets based on day of week and date difference
+  // Generate unique matches based on the specific date
   const matchSets = {
-    0: [ // Sunday - Turkish leagues
+    0: [ // Sunday
       { home: 'Galatasaray', away: 'Fenerbahçe', league: 'TUR1', country: '🇹🇷' },
       { home: 'Beşiktaş', away: 'Trabzonspor', league: 'TUR1', country: '🇹🇷' },
       { home: 'Başakşehir', away: 'Konyaspor', league: 'TUR1', country: '🇹🇷' }
     ],
-    1: [ // Monday - European leagues
+    1: [ // Monday
       { home: 'Barcelona', away: 'Real Madrid', league: 'ESP1', country: '🇪🇸' },
       { home: 'Bayern Munich', away: 'Dortmund', league: 'GER1', country: '🇩🇪' },
       { home: 'PSG', away: 'Marseille', league: 'FRA1', country: '🇫🇷' }
     ],
-    2: [ // Tuesday - Premier League
+    2: [ // Tuesday
       { home: 'Manchester City', away: 'Liverpool', league: 'ENG1', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
       { home: 'Arsenal', away: 'Chelsea', league: 'ENG1', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
       { home: 'Tottenham', away: 'Manchester Utd', league: 'ENG1', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' }
     ],
-    3: [ // Wednesday - Serie A
+    3: [ // Wednesday
       { home: 'Juventus', away: 'Inter Milan', league: 'ITA1', country: '🇮🇹' },
       { home: 'AC Milan', away: 'Napoli', league: 'ITA1', country: '🇮🇹' },
       { home: 'Roma', away: 'Lazio', league: 'ITA1', country: '🇮🇹' }
     ],
-    4: [ // Thursday - Europa League
+    4: [ // Thursday
       { home: 'Sevilla', away: 'Villarreal', league: 'UEL', country: '🇪🇺' },
       { home: 'Eintracht Frankfurt', away: 'Bayer Leverkusen', league: 'UEL', country: '🇪🇺' },
       { home: 'West Ham', away: 'Brighton', league: 'UEL', country: '🇪🇺' }
     ],
-    5: [ // Friday - Bundesliga
+    5: [ // Friday
       { home: 'Bayern Munich', away: 'RB Leipzig', league: 'GER1', country: '🇩🇪' },
       { home: 'Borussia Dortmund', away: 'Schalke', league: 'GER1', country: '🇩🇪' },
       { home: 'Wolfsburg', away: 'Hoffenheim', league: 'GER1', country: '🇩🇪' }
     ],
-    6: [ // Saturday - Mixed leagues
+    6: [ // Saturday
       { home: 'Ajax', away: 'PSV', league: 'NED1', country: '🇳🇱' },
       { home: 'Benfica', away: 'Porto', league: 'POR1', country: '🇵🇹' },
       { home: 'Celtic', away: 'Rangers', league: 'SCO1', country: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' }
     ]
   };
 
-  // Get base matches for the day
   let baseMatches = matchSets[dayOfWeek] || matchSets[0];
   
   console.log('🏈 Selected matches for day', dayOfWeek, ':', baseMatches.map(m => `${m.home} vs ${m.away}`));
   
-  // Modify matches based on how far from today
-  if (Math.abs(daysDiff) > 7) {
-    // Far dates get special matches
+  // Add variation for different dates
+  if (Math.abs(daysDiff) > 3) {
     baseMatches = [
       { home: 'Antalyaspor', away: 'Sivasspor', league: 'TUR1', country: '🇹🇷' },
       { home: 'Kasımpaşa', away: 'Alanyaspor', league: 'TUR1', country: '🇹🇷' },
       { home: 'Rizespor', away: 'Hatayspor', league: 'TUR1', country: '🇹🇷' }
     ];
-    console.log('🏈 Using far date matches:', baseMatches.map(m => `${m.home} vs ${m.away}`));
+    console.log('🏈 Using special matches for far date:', baseMatches.map(m => `${m.home} vs ${m.away}`));
   }
 
-  // Generate matches with proper data
   const matches = baseMatches.map((match, index) => {
-    const baseTime = 18 + (index * 2) + (dayOfWeek % 3); // Vary start times by day
-    const minutes = Math.floor(Math.random() * 4) * 15; // 00, 15, 30, 45
+    // Create unique times based on date and day of week
+    const baseTime = 18 + index + (dayOfWeek % 4);
+    const minutes = (dayOfWeek * 15 + index * 15) % 60;
     const time = `${baseTime}:${minutes.toString().padStart(2, '0')}`;
     
-    // Generate odds based on date difference
-    const oddsVariation = Math.abs(daysDiff) * 0.1 + (dayOfWeek * 0.05);
-    const baseOdds = [2.10, 3.20, 2.80];
-    const odds = baseOdds.map(odd => (odd + (Math.random() - 0.5) * oddsVariation).toFixed(2));
+    // Generate unique odds based on day of week and date
+    const oddsBase = [2.10, 3.20, 2.80];
+    const dayVariation = dayOfWeek * 0.2;
+    const dateVariation = Math.abs(daysDiff) * 0.1;
+    const odds = oddsBase.map((odd, i) => 
+      (odd + dayVariation + dateVariation + (i * 0.1)).toFixed(2)
+    );
     
-    // Generate match code based on date
-    const matchCode = (10000 + Math.abs(daysDiff) * 100 + dayOfWeek * 50 + index * 10 + Math.floor(Math.random() * 10)).toString();
+    // Generate unique match code
+    const matchCode = (10000 + dayOfWeek * 1000 + Math.abs(daysDiff) * 100 + index * 10).toString();
     
-    // Determine status and score based on whether it's past or future
+    // Status based on date relationship to today
     let status = '';
     let score = '';
     
     if (daysDiff < 0) {
-      // Past match - show as finished with score
       status = 'finished';
-      const homeScore = Math.floor(Math.random() * 4);
-      const awayScore = Math.floor(Math.random() * 4);
+      const homeScore = (dayOfWeek + index) % 4;
+      const awayScore = (dayOfWeek + index + 1) % 4;
       score = `${homeScore}-${awayScore}`;
     } else if (daysDiff === 0) {
-      // Today - some might be live
-      status = Math.random() > 0.5 ? 'live' : 'upcoming';
+      status = index % 2 === 0 ? 'live' : 'upcoming';
       if (status === 'live') {
-        const homeScore = Math.floor(Math.random() * 3);
-        const awayScore = Math.floor(Math.random() * 3);
+        const homeScore = index % 3;
+        const awayScore = (index + 1) % 3;
         score = `${homeScore}-${awayScore}`;
       }
     } else {
-      // Future match
       status = 'upcoming';
     }
 
     return {
-      id: index + 1 + Math.abs(daysDiff) * 10 + dayOfWeek * 100,
+      id: dayOfWeek * 1000 + Math.abs(daysDiff) * 100 + index + 1,
       time: time,
       homeTeam: match.home,
       awayTeam: match.away,
@@ -144,8 +130,8 @@ function generateMatchesForDate(dateStr) {
         away: odds[2]
       },
       overUnder: {
-        over25: (1.80 + Math.random() * 0.4 + dayOfWeek * 0.1).toFixed(2),
-        under25: (2.00 + Math.random() * 0.4 + dayOfWeek * 0.1).toFixed(2)
+        over25: (1.80 + dayOfWeek * 0.1 + index * 0.05).toFixed(2),
+        under25: (2.00 + dayOfWeek * 0.1 + index * 0.05).toFixed(2)
       }
     };
   });
