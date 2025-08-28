@@ -298,63 +298,6 @@ export class UIManager {
 
     const { headers, matchRows } = this.generateTableContent(betType, matches);
 
-    const matchesHTML = this.currentMatches.map((match) => {
-      return `
-        <tr class="match-row">
-          <td class="time-cell">${match.time}</td>
-          <td class="country-cell">${match.country}</td>
-          <td class="league-cell">${match.league}</td>
-          <td class="status-cell">
-            ${match.status === '●' ? '<span class="status-live">●</span>' : 
-              match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
-          </td>
-          <td class="teams-cell">
-            <span class="home-team">${match.homeTeam}</span>
-            <span class="vs-separator"> - </span>
-            <span class="away-team">${match.awayTeam}</span>
-          </td>
-          <td class="score-cell">${match.score}</td>
-          <td class="code-cell">${match.code}</td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.odds1}</div>
-            <div class="odds-code">01</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.oddsX}</div>
-            <div class="odds-code">02</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.odds2}</div>
-            <div class="odds-code">03</div>
-          </td>
-          <td class="code-cell">${match.code}OU</td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.over25}</div>
-            <div class="odds-code">01</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.under25}</div>
-            <div class="odds-code">02</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.doubleChance1X}</div>
-            <div class="odds-code">01</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.doubleChance12}</div>
-            <div class="odds-code">02</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.doubleChanceX2}</div>
-            <div class="odds-code">03</div>
-          </td>
-          <td class="all-cell">
-            <button class="bet-all-button">💰</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
     this.matchesContainer.innerHTML = `
       <div class="betting-table-container">
         <table class="betting-table">
