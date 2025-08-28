@@ -5,15 +5,17 @@ function generateMatchesForDate(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
   
-  // Parse the date string - handle both YYYY-MM-DD and DD.MM.YYYY formats
+  console.log('🗓️ Processing date:', dateStr);
+  
+  // Parse the date string - handle DD.MM.YYYY format from UI
   let selectedDate;
-  if (dateStr.includes('-')) {
-    // YYYY-MM-DD format from API
-    selectedDate = new Date(dateStr);
-  } else if (dateStr.includes('.')) {
+  if (dateStr.includes('.')) {
     // DD.MM.YYYY format
     const [day, month, year] = dateStr.split('.');
     selectedDate = new Date(year, month - 1, day);
+  } else if (dateStr.includes('-')) {
+    // YYYY-MM-DD format fallback
+    selectedDate = new Date(dateStr);
   } else {
     // Fallback to today
     selectedDate = new Date();
@@ -23,12 +25,13 @@ function generateMatchesForDate(dateStr) {
   const daysDiff = Math.floor((selectedDate - today) / (1000 * 60 * 60 * 24));
   const dayOfWeek = selectedDate.getDay();
   
-  console.log('Date parsing:', {
+  console.log('📅 Date parsing result:', {
     input: dateStr,
     selectedDate: selectedDate.toISOString().split('T')[0],
     today: today.toISOString().split('T')[0],
     daysDiff: daysDiff,
-    dayOfWeek: dayOfWeek
+    dayOfWeek: dayOfWeek,
+    dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
   });
   
   // Different match sets based on day of week and date difference

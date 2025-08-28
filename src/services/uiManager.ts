@@ -26,9 +26,8 @@ export class UIManager {
   }
 
   private formatDateForAPI(dateStr: string): string {
-    // Convert DD.MM.YYYY to YYYY-MM-DD for API
-    const [day, month, year] = dateStr.split('.');
-    return `${year}-${month}-${day}`;
+    // Keep the DD.MM.YYYY format as the API expects it
+    return dateStr;
   }
 
   private generateDateOptions(): string {

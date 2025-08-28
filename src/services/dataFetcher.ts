@@ -14,7 +14,7 @@ export class DataFetcher {
     try {
       const apiUrl = this.getApiUrl();
       const urlWithDate = date ? `${apiUrl}?date=${encodeURIComponent(date)}` : apiUrl;
-      console.log('Fetching from:', urlWithDate, 'with date:', date);
+      console.log('🔍 Fetching from:', urlWithDate, 'with date:', date);
       
       const response = await fetch(urlWithDate, {
         method: 'GET',
