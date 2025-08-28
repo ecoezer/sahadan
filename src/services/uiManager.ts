@@ -274,110 +274,61 @@ export class UIManager {
     this.errorElement.classList.add('hidden');
     this.matchesContainer.classList.remove('hidden');
 
-    this.currentMatches = this.prepareSahadanMatches();
+    // Use the actual scraped matches instead of hardcoded sample data
+    this.currentMatches = this.convertMatchesToTableFormat(matches);
     this.renderMatches(matches);
     this.updateTimestamp(timestamp);
   }
 
-  private prepareSahadanMatches() {
-    // Sahadan.com'daki gerçek veri yapısına göre örnek veriler
-    return [
-      {
-        time: '18:30',
-        country: '🇨🇿',
-        league: 'ČEKK',
-        status: '●',
-        homeTeam: 'Vysoke Myto',
-        awayTeam: 'Jihlava',
-        score: '0-1',
-        code: '16127',
-        odds1: '7.62',
-        oddsX: '4.97',
-        odds2: '1.11',
-        over25: '',
-        under25: '',
-        doubleChance1X: '',
-        doubleChance12: '',
-        doubleChanceX2: '',
-        all: ''
-      },
-      {
-        time: '18:30',
-        country: '🇨🇿',
-        league: 'ČEKK',
-        status: 'C',
-        homeTeam: 'Sokol Hostoun',
-        awayTeam: 'Bohemians 1905',
-        score: '1-2',
-        code: '10376',
-        odds1: '4.90',
-        oddsX: '4.05',
-        odds2: '1.29',
-        over25: '',
-        under25: '',
-        doubleChance1X: '',
-        doubleChance12: '',
-        doubleChanceX2: '',
-        all: ''
-      },
-      {
-        time: '19:00',
-        country: '🇳🇴',
-        league: 'NOK',
-        status: '●',
-        homeTeam: 'Strommen',
-        awayTeam: 'Odds Bk',
-        score: '2-2',
-        code: '13347',
-        odds1: '3.45',
-        oddsX: '4.09',
-        odds2: '1.44',
-        over25: '02644',
-        under25: '1.54',
-        doubleChance1X: '',
-        doubleChance12: '',
-        doubleChanceX2: '',
-        all: ''
-      },
-      {
-        time: '19:00',
-        country: '🇳🇴',
-        league: 'NOK',
-        status: '●',
-        homeTeam: 'Bjarg',
-        awayTeam: 'Vard Haugesund',
-        score: '2-1',
-        code: '12893',
-        odds1: '1.64',
-        oddsX: '3.39',
-        odds2: '3.09',
-        over25: '04873',
-        under25: '1.05',
-        doubleChance1X: '',
-        doubleChance12: '1.39',
-        doubleChanceX2: '',
-        all: ''
-      },
-      {
-        time: '20:00',
-        country: '🇩🇪',
-        league: 'ALMBÖL',
-        status: '●',
-        homeTeam: 'Lübeck',
-        awayTeam: 'Jeddeloh',
-        score: '1-1',
-        code: '12500',
-        odds1: '2.14',
-        oddsX: '3.13',
-        odds2: '2.25',
-        over25: '12501',
-        under25: '1.17',
-        doubleChance1X: '1.05',
-        doubleChance12: '1.19',
-        doubleChanceX2: '',
-        all: ''
-      }
-    ];
+  private convertMatchesToTableFormat(matches: Match[]) {
+    // Convert the scraped matches to the table format expected by the UI
+    return matches.map(match => ({
+      time: match.time,
+      country: this.getCountryFlag(match.league),
+      league: match.league || 'MISC',
+      status: this.getMatchStatus(match.status),
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      score: match.score || '',
+      code: match.matchCode || '',
+      odds1: match.odds.home,
+      oddsX: match.odds.draw,
+      odds2: match.odds.away,
+      over25: match.overUnder?.over25 || '',
+      under25: match.overUnder?.under25 || '',
+      doubleChance1X: '',
+      doubleChance12: '',
+      doubleChanceX2: '',
+      all: ''
+    }));
+  }
+
+  private getCountryFlag(league?: string): string {
+    const flagMap: { [key: string]: string } = {
+      'TUR1': '🇹🇷', 'TUR': '🇹🇷',
+      'ESP1': '🇪🇸', 'ESP': '🇪🇸',
+      'ENG1': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'ENG': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+      'GER1': '🇩🇪', 'GER': '🇩🇪', 'ALMBÖL': '🇩🇪',
+      'ITA1': '🇮🇹', 'ITA': '🇮🇹',
+      'FRA1': '🇫🇷', 'FRA': '🇫🇷',
+      'POR1': '🇵🇹', 'POR': '🇵🇹',
+      'NED1': '🇳🇱', 'NED': '🇳🇱',
+      'BEL1': '🇧🇪', 'BEL': '🇧🇪',
+      'SCO1': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'SCO': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+      'UEL': '🇪🇺', 'UCL': '🇪🇺',
+      'ČEKK': '🇨🇿', 'CZE': '🇨🇿',
+      'NOK': '🇳🇴', 'NOR': '🇳🇴'
+    };
+    return flagMap[league || ''] || '🌍';
+  }
+
+  private getMatchStatus(status?: string): string {
+    switch (status) {
+      case 'live': return '●';
+      case 'finished': return 'C';
+      case 'cancelled': return 'C';
+      default: return '';
+    }
   }
 
   private sortMatches(column: string): void {
