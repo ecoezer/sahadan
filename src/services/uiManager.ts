@@ -6,11 +6,8 @@ export class UIManager {
   private errorElement!: HTMLElement;
   private matchesContainer!: HTMLElement;
   private lastUpdated!: HTMLElement;
-  private dateSelector!: HTMLElement;
   private currentMatches: any[] = [];
-  private sortState: { column: string; direction: 'asc' | 'desc' } = { column: '', direction: 'asc' };
   private selectedDate: string = this.getTodayString();
-  private onDateChange: (date: string) => void = () => {};
 
   constructor() {
     this.container = document.getElementById('app')!;
