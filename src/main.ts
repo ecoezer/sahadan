@@ -1,194 +1,334 @@
 import './style.css';
+import { SahadanScraper, SahadanMatch } from './sahadan-scraper';
 
-// Simple test to make sure the app loads
-console.log('App is loading...');
+class SahadanApp {
+  private scraper: SahadanScraper;
+  private matches: SahadanMatch[] = [];
+  private isLoading = false;
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div class="app-container">
-    <header class="app-header">
-      <h1>🏆 Live Sports WebSocket</h1>
-      <div class="connection-status">
-        <span class="status-indicator disconnected" id="status-indicator"></span>
-        <span id="connection-text">Ready to Connect</span>
-      </div>
-    </header>
+  constructor() {
+    this.scraper = new SahadanScraper();
+    this.init();
+  }
 
-    <div class="controls">
-      <button id="connect-btn" class="btn btn-primary">Connect to Live Data</button>
-      <button id="disconnect-btn" class="btn btn-secondary" disabled>Disconnect</button>
-      <div class="url-input">
-        <input 
-          type="text" 
-          id="websocket-url" 
-          placeholder="wss://example.sahadan.com/live"
-          value="wss://mock-server/live"
-        />
-        <label>
-          <input type="checkbox" id="use-mock" checked> Use Mock Server
-        </label>
-      </div>
-    </div>
+  private init() {
+    this.renderUI();
+    this.attachEventListeners();
+    this.addLog('info', 'Sahadan Data Extractor initialized');
+  }
 
-    <div class="stats">
-      <div class="stat-card">
-        <h3>Live Matches</h3>
-        <span id="match-count">0</span>
-      </div>
-      <div class="stat-card">
-        <h3>Messages Received</h3>
-        <span id="message-count">0</span>
-      </div>
-      <div class="stat-card">
-        <h3>Last Update</h3>
-        <span id="last-update">Never</span>
-      </div>
-    </div>
+  private renderUI() {
+    document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+      <div class="app-container">
+        <header class="app-header">
+          <h1>🎯 Sahadan Data Extractor</h1>
+          <div class="status">
+            <span id="match-count">0 matches loaded</span>
+          </div>
+        </header>
 
-    <div class="matches-container">
-      <h2>📊 Live Matches</h2>
-      <div id="matches-list" class="matches-list">
-        <div class="no-data">Click "Connect to Live Data" to start receiving live match data</div>
-      </div>
-    </div>
+        <div class="controls">
+          <button id="fetch-btn" class="btn btn-primary">
+            📊 Extract Sahadan Data
+          </button>
+          <button id="export-json-btn" class="btn btn-secondary" disabled>
+            📄 Export JSON
+          </button>
+          <button id="export-csv-btn" class="btn btn-secondary" disabled>
+            📊 Export CSV
+          </button>
+          
+          <div class="filters">
+            <h3>🔍 Filters</h3>
+            <div class="filter-row">
+              <select id="league-filter">
+                <option value="">All Leagues</option>
+                <option value="süper lig">Süper Lig</option>
+                <option value="1. lig">1. Lig</option>
+                <option value="champions league">Champions League</option>
+              </select>
+              
+              <input type="number" id="min-odds" placeholder="Min Home Odds" step="0.1" min="1">
+              <input type="number" id="max-odds" placeholder="Max Home Odds" step="0.1" min="1">
+              
+              <button id="apply-filters" class="btn btn-small">Apply Filters</button>
+              <button id="clear-filters" class="btn btn-small">Clear</button>
+            </div>
+          </div>
+        </div>
 
-    <div class="logs-container">
-      <h2>📡 WebSocket Messages</h2>
-      <div class="logs-controls">
-        <button id="clear-logs" class="btn btn-small">Clear Logs</button>
-        <label>
-          <input type="checkbox" id="auto-scroll" checked> Auto-scroll
-        </label>
-      </div>
-      <div id="logs" class="logs">
-        <div class="log-entry info">
-          <span class="timestamp">[${new Date().toLocaleTimeString()}]</span>
-          <span class="message">Application loaded successfully. Ready to connect to WebSocket.</span>
+        <div class="stats">
+          <div class="stat-card">
+            <h3>Total Matches</h3>
+            <span id="total-matches">0</span>
+          </div>
+          <div class="stat-card">
+            <h3>Filtered Matches</h3>
+            <span id="filtered-matches">0</span>
+          </div>
+          <div class="stat-card">
+            <h3>Avg Home Odds</h3>
+            <span id="avg-odds">0.00</span>
+          </div>
+          <div class="stat-card">
+            <h3>Last Update</h3>
+            <span id="last-update">Never</span>
+          </div>
+        </div>
+
+        <div class="matches-container">
+          <h2>📋 Extracted Matches</h2>
+          <div id="matches-list" class="matches-list">
+            <div class="no-data">Click "Extract Sahadan Data" to load betting data</div>
+          </div>
+        </div>
+
+        <div class="logs-container">
+          <h2>📡 Extraction Logs</h2>
+          <div class="logs-controls">
+            <button id="clear-logs" class="btn btn-small">Clear Logs</button>
+          </div>
+          <div id="logs" class="logs">
+            <div class="log-entry info">
+              <span class="timestamp">[${new Date().toLocaleTimeString()}]</span>
+              <span class="message">Ready to extract data from https://arsiv.sahadan.com/Iddaa/program.aspx</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <h3>🔧 How to Use for Real Scraping:</h3>
+          <ol>
+            <li><strong>Backend Required:</strong> Create a Node.js server to avoid CORS restrictions</li>
+            <li><strong>HTTP Request:</strong> Use axios/fetch to get the HTML page</li>
+            <li><strong>HTML Parsing:</strong> Use cheerio or jsdom to parse match data</li>
+            <li><strong>Data Structure:</strong> Extract teams, odds, codes, and times</li>
+            <li><strong>Real-time Updates:</strong> Set up intervals to refresh data</li>
+          </ol>
+          
+          <div class="code-example">
+            <h4>Example Backend Code:</h4>
+            <pre><code>// Node.js backend example
+const axios = require('axios');
+const cheerio = require('cheerio');
+
+async function scrapeSahadan() {
+  const response = await axios.get('https://arsiv.sahadan.com/Iddaa/program.aspx');
+  const $ = cheerio.load(response.data);
+  
+  const matches = [];
+  $('.matchRow').each((i, row) => {
+    const homeTeam = $(row).find('.homeTeam').text();
+    const awayTeam = $(row).find('.awayTeam').text();
+    const homeOdds = parseFloat($(row).find('.homeOdds').text());
+    // ... extract more data
+    
+    matches.push({ homeTeam, awayTeam, homeOdds });
+  });
+  
+  return matches;
+}</code></pre>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-`;
-
-// Add basic event listeners
-const connectBtn = document.getElementById('connect-btn')!;
-const disconnectBtn = document.getElementById('disconnect-btn')!;
-const clearLogsBtn = document.getElementById('clear-logs')!;
-
-connectBtn.addEventListener('click', () => {
-  console.log('Connect button clicked');
-  addLog('info', 'Starting mock WebSocket connection...');
-  
-  // Simulate connection
-  setTimeout(() => {
-    updateConnectionStatus(true);
-    addLog('success', 'Connected to mock WebSocket server');
-    startMockData();
-  }, 1000);
-});
-
-disconnectBtn.addEventListener('click', () => {
-  console.log('Disconnect button clicked');
-  updateConnectionStatus(false);
-  addLog('info', 'Disconnected from WebSocket server');
-});
-
-clearLogsBtn.addEventListener('click', () => {
-  const logs = document.getElementById('logs')!;
-  logs.innerHTML = '';
-});
-
-function updateConnectionStatus(connected: boolean) {
-  const indicator = document.getElementById('status-indicator')!;
-  const text = document.getElementById('connection-text')!;
-  const connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
-  const disconnectBtn = document.getElementById('disconnect-btn') as HTMLButtonElement;
-
-  if (connected) {
-    indicator.className = 'status-indicator connected';
-    text.textContent = 'Connected';
-    connectBtn.disabled = true;
-    disconnectBtn.disabled = false;
-  } else {
-    indicator.className = 'status-indicator disconnected';
-    text.textContent = 'Disconnected';
-    connectBtn.disabled = false;
-    disconnectBtn.disabled = true;
+    `;
   }
-}
 
-function addLog(type: 'info' | 'error' | 'success' | 'data', message: string) {
-  const logs = document.getElementById('logs')!;
-  const timestamp = new Date().toLocaleTimeString();
-  
-  const logEntry = document.createElement('div');
-  logEntry.className = `log-entry ${type}`;
-  logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="message">${message}</span>`;
-  
-  logs.appendChild(logEntry);
-  logs.scrollTop = logs.scrollHeight;
-}
+  private attachEventListeners() {
+    document.getElementById('fetch-btn')!.addEventListener('click', () => this.fetchData());
+    document.getElementById('export-json-btn')!.addEventListener('click', () => this.exportJSON());
+    document.getElementById('export-csv-btn')!.addEventListener('click', () => this.exportCSV());
+    document.getElementById('apply-filters')!.addEventListener('click', () => this.applyFilters());
+    document.getElementById('clear-filters')!.addEventListener('click', () => this.clearFilters());
+    document.getElementById('clear-logs')!.addEventListener('click', () => this.clearLogs());
+  }
 
-function startMockData() {
-  const matches = [
-    {
-      id: '1',
-      homeTeam: 'Galatasaray',
-      awayTeam: 'Fenerbahçe',
-      score: '1-0',
-      time: '45+2',
-      odds: { home: 2.1, draw: 3.2, away: 3.8 },
-      status: 'live'
-    },
-    {
-      id: '2',
-      homeTeam: 'Beşiktaş',
-      awayTeam: 'Trabzonspor',
-      score: '0-0',
-      time: '23',
-      odds: { home: 1.9, draw: 3.1, away: 4.2 },
-      status: 'live'
+  private async fetchData() {
+    if (this.isLoading) return;
+
+    this.isLoading = true;
+    const fetchBtn = document.getElementById('fetch-btn') as HTMLButtonElement;
+    fetchBtn.disabled = true;
+    fetchBtn.textContent = '⏳ Extracting...';
+
+    this.addLog('info', 'Starting data extraction from Sahadan...');
+
+    try {
+      this.matches = await this.scraper.fetchMatches();
+      this.displayMatches(this.matches);
+      this.updateStats(this.matches);
+      this.enableExportButtons();
+      
+      this.addLog('success', `Successfully extracted ${this.matches.length} matches`);
+      document.getElementById('last-update')!.textContent = new Date().toLocaleTimeString();
+      
+    } catch (error) {
+      this.addLog('error', `Error extracting data: ${error}`);
+    } finally {
+      this.isLoading = false;
+      fetchBtn.disabled = false;
+      fetchBtn.textContent = '📊 Extract Sahadan Data';
     }
-  ];
+  }
 
-  // Display matches
-  const matchesList = document.getElementById('matches-list')!;
-  matchesList.innerHTML = matches.map(match => `
-    <div class="match-card ${match.status}">
-      <div class="match-header">
+  private displayMatches(matches: SahadanMatch[]) {
+    const matchesList = document.getElementById('matches-list')!;
+    
+    if (matches.length === 0) {
+      matchesList.innerHTML = '<div class="no-data">No matches found</div>';
+      return;
+    }
+
+    matchesList.innerHTML = matches.map(match => `
+      <div class="match-card">
+        <div class="match-header">
+          <div class="match-info">
+            <span class="league">${match.league}</span>
+            <span class="code">${match.code}</span>
+            <span class="datetime">${match.date} ${match.time}</span>
+          </div>
+        </div>
+        
         <div class="teams">
           <span class="home-team">${match.homeTeam}</span>
           <span class="vs">vs</span>
           <span class="away-team">${match.awayTeam}</span>
         </div>
-        <div class="match-info">
-          <span class="score">${match.score}</span>
-          <span class="time">${match.time}'</span>
-          <span class="status-badge ${match.status}">${match.status}</span>
+
+        <div class="odds-grid">
+          <div class="odds-section">
+            <h4>1X2</h4>
+            <div class="odds-row">
+              <div class="odd">
+                <span class="label">1</span>
+                <span class="value">${match.odds.home.toFixed(2)}</span>
+              </div>
+              <div class="odd">
+                <span class="label">X</span>
+                <span class="value">${match.odds.draw.toFixed(2)}</span>
+              </div>
+              <div class="odd">
+                <span class="label">2</span>
+                <span class="value">${match.odds.away.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="odds-section">
+            <h4>Goals</h4>
+            <div class="odds-row">
+              <div class="odd">
+                <span class="label">O2.5</span>
+                <span class="value">${match.odds.over25.toFixed(2)}</span>
+              </div>
+              <div class="odd">
+                <span class="label">U2.5</span>
+                <span class="value">${match.odds.under25.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="odds-section">
+            <h4>Both Score</h4>
+            <div class="odds-row">
+              <div class="odd">
+                <span class="label">GG</span>
+                <span class="value">${match.odds.gg.toFixed(2)}</span>
+              </div>
+              <div class="odd">
+                <span class="label">NG</span>
+                <span class="value">${match.odds.ng.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="odds">
-        <div class="odd">
-          <span class="label">1</span>
-          <span class="value">${match.odds.home.toFixed(2)}</span>
-        </div>
-        <div class="odd">
-          <span class="label">X</span>
-          <span class="value">${match.odds.draw.toFixed(2)}</span>
-        </div>
-        <div class="odd">
-          <span class="label">2</span>
-          <span class="value">${match.odds.away.toFixed(2)}</span>
-        </div>
-      </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
 
-  // Update stats
-  document.getElementById('match-count')!.textContent = matches.length.toString();
-  document.getElementById('message-count')!.textContent = '1';
-  document.getElementById('last-update')!.textContent = new Date().toLocaleTimeString();
+  private updateStats(matches: SahadanMatch[]) {
+    document.getElementById('total-matches')!.textContent = this.matches.length.toString();
+    document.getElementById('filtered-matches')!.textContent = matches.length.toString();
+    document.getElementById('match-count')!.textContent = `${matches.length} matches loaded`;
+    
+    if (matches.length > 0) {
+      const avgOdds = matches.reduce((sum, match) => sum + match.odds.home, 0) / matches.length;
+      document.getElementById('avg-odds')!.textContent = avgOdds.toFixed(2);
+    }
+  }
 
-  addLog('data', 'Received match data for 2 live matches');
+  private applyFilters() {
+    const league = (document.getElementById('league-filter') as HTMLSelectElement).value;
+    const minOdds = parseFloat((document.getElementById('min-odds') as HTMLInputElement).value) || undefined;
+    const maxOdds = parseFloat((document.getElementById('max-odds') as HTMLInputElement).value) || undefined;
+
+    const filtered = this.scraper.filterMatches(this.matches, {
+      league,
+      minHomeOdds: minOdds,
+      maxHomeOdds: maxOdds
+    });
+
+    this.displayMatches(filtered);
+    this.updateStats(filtered);
+    this.addLog('info', `Applied filters: ${filtered.length} matches shown`);
+  }
+
+  private clearFilters() {
+    (document.getElementById('league-filter') as HTMLSelectElement).value = '';
+    (document.getElementById('min-odds') as HTMLInputElement).value = '';
+    (document.getElementById('max-odds') as HTMLInputElement).value = '';
+    
+    this.displayMatches(this.matches);
+    this.updateStats(this.matches);
+    this.addLog('info', 'Filters cleared');
+  }
+
+  private enableExportButtons() {
+    (document.getElementById('export-json-btn') as HTMLButtonElement).disabled = false;
+    (document.getElementById('export-csv-btn') as HTMLButtonElement).disabled = false;
+  }
+
+  private exportJSON() {
+    const json = this.scraper.exportToJSON(this.matches);
+    this.downloadFile('sahadan-data.json', json, 'application/json');
+    this.addLog('success', 'Data exported as JSON');
+  }
+
+  private exportCSV() {
+    const csv = this.scraper.exportToCSV(this.matches);
+    this.downloadFile('sahadan-data.csv', csv, 'text/csv');
+    this.addLog('success', 'Data exported as CSV');
+  }
+
+  private downloadFile(filename: string, content: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  private addLog(type: 'info' | 'error' | 'success', message: string) {
+    const logs = document.getElementById('logs')!;
+    const timestamp = new Date().toLocaleTimeString();
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry ${type}`;
+    logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="message">${message}</span>`;
+    
+    logs.appendChild(logEntry);
+    logs.scrollTop = logs.scrollHeight;
+  }
+
+  private clearLogs() {
+    const logs = document.getElementById('logs')!;
+    logs.innerHTML = '';
+  }
 }
 
-console.log('App setup complete');
+// Initialize the app
+new SahadanApp();
