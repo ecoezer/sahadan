@@ -12,6 +12,7 @@ export class UIManager {
 
   constructor() {
     this.container = document.getElementById('app')!;
+    this.onDateChange = () => {};
     this.initializeUI();
   }
 
