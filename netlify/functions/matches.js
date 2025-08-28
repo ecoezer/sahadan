@@ -227,12 +227,27 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Get date parameter from query string
+    const requestedDate = event.queryStringParameters?.date;
+    console.log('Requested date:', requestedDate);
+    
     console.log('Fetching data from sahadan.com...');
     
     // Add random delay to avoid being blocked
     await delay(Math.random() * 2000 + 1000);
     
-    const response = await fetch('https://arsiv.sahadan.com/Iddaa/program.aspx', {
+    // Construct URL with date parameter if provided
+    let url = 'https://arsiv.sahadan.com/Iddaa/program.aspx';
+    if (requestedDate) {
+      // Convert YYYY-MM-DD to DD.MM.YYYY format for sahadan.com
+      const [year, month, day] = requestedDate.split('-');
+      const sahadanDate = `${day}.${month}.${year}`;
+      url += `?tarih=${encodeURIComponent(sahadanDate)}`;
+    }
+    
+    console.log('Fetching from URL:', url);
+    
+    const response = await fetch(url, {
       headers: {
         'User-Agent': getRandomUserAgent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -339,12 +354,15 @@ exports.handler = async (event, context) => {
         matches, 
         timestamp: new Date().toISOString(),
         source: 'sahadan.com',
+        requestedDate: requestedDate,
+        sahadanUrl: url,
         totalMatches: matches.length,
         debug: {
           htmlLength: html.length,
           extractedMatches: matches.length,
           sampleData: matches.length === 5,
-          parser: 'JSDOM'
+          parser: 'JSDOM',
+          requestedDate: requestedDate
         }
       })
     };
@@ -381,12 +399,14 @@ exports.handler = async (event, context) => {
         matches: sampleMatches, 
         timestamp: new Date().toISOString(),
         source: 'sahadan.com (fallback)',
+        requestedDate: event.queryStringParameters?.date,
         totalMatches: sampleMatches.length,
         error: error.message,
         debug: {
           fallbackData: true,
           originalError: error.message,
-          parser: 'JSDOM'
+          parser: 'JSDOM',
+          requestedDate: event.queryStringParameters?.date
         }
       })
     };

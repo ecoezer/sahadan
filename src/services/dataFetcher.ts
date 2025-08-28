@@ -10,12 +10,13 @@ export class DataFetcher {
     return '/.netlify/functions/matches';
   }
 
-  static async fetchMatches(): Promise<ApiResponse> {
+  static async fetchMatches(date?: string): Promise<ApiResponse> {
     try {
       const apiUrl = this.getApiUrl();
-      console.log('Fetching from:', apiUrl);
+      const urlWithDate = date ? `${apiUrl}?date=${encodeURIComponent(date)}` : apiUrl;
+      console.log('Fetching from:', urlWithDate);
       
-      const response = await fetch(apiUrl, {
+      const response = await fetch(urlWithDate, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

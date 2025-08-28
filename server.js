@@ -166,9 +166,24 @@ function extractMatchData(html) {
 // Proxy endpoint to fetch data from sahadan.com
 app.get('/api/matches', async (req, res) => {
   try {
+    // Get date parameter from query string
+    const requestedDate = req.query.date;
+    console.log('Requested date:', requestedDate);
+    
     console.log('Fetching data from sahadan.com...');
     
-    const response = await fetch('https://arsiv.sahadan.com/Iddaa/program.aspx', {
+    // Construct URL with date parameter if provided
+    let url = 'https://arsiv.sahadan.com/Iddaa/program.aspx';
+    if (requestedDate) {
+      // Convert YYYY-MM-DD to DD.MM.YYYY format for sahadan.com
+      const [year, month, day] = requestedDate.split('-');
+      const sahadanDate = `${day}.${month}.${year}`;
+      url += `?tarih=${encodeURIComponent(sahadanDate)}`;
+    }
+    
+    console.log('Fetching from URL:', url);
+    
+    const response = await fetch(url, {
       headers: {
         'User-Agent': getRandomUserAgent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -245,6 +260,8 @@ app.get('/api/matches', async (req, res) => {
     res.json({ 
       matches, 
       timestamp: new Date().toISOString(),
+      requestedDate: requestedDate,
+      sahadanUrl: url,
       debug: { htmlLength: html.length, extractedMatches: matches.length }
     });
     
@@ -252,7 +269,8 @@ app.get('/api/matches', async (req, res) => {
     console.error('Error fetching data:', error);
     res.status(500).json({ 
       error: 'Failed to fetch data from sahadan.com',
-      message: error.message 
+      message: error.message,
+      requestedDate: req.query.date
     });
   }
 });

@@ -6,14 +6,65 @@ export class UIManager {
   private errorElement!: HTMLElement;
   private matchesContainer!: HTMLElement;
   private lastUpdated!: HTMLElement;
+  private dateSelector!: HTMLElement;
   private currentMatches: any[] = [];
   private sortState: { column: string; direction: 'asc' | 'desc' } = { column: '', direction: 'asc' };
+  private selectedDate: string = this.getTodayString();
+  private onDateChange: (date: string) => void = () => {};
 
   constructor() {
     this.container = document.getElementById('app')!;
     this.initializeUI();
   }
 
+  private getTodayString(): string {
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
+
+  private formatDateForAPI(dateStr: string): string {
+    // Convert DD.MM.YYYY to YYYY-MM-DD for API
+    const [day, month, year] = dateStr.split('.');
+    return `${year}-${month}-${day}`;
+  }
+
+  private generateDateOptions(): string {
+    const options: string[] = [];
+    const today = new Date();
+    
+    // Add past 30 days
+    for (let i = 30; i >= 1; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateStr = this.formatDateString(date);
+      options.push(`<option value="${dateStr}">${dateStr}</option>`);
+    }
+    
+    // Add today
+    const todayStr = this.formatDateString(today);
+    options.push(`<option value="${todayStr}" selected>${todayStr} (Bugün)</option>`);
+    
+    // Add next 7 days
+    for (let i = 1; i <= 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateStr = this.formatDateString(date);
+      const dayName = date.toLocaleDateString('tr-TR', { weekday: 'short' });
+      options.push(`<option value="${dateStr}">${dateStr} (${dayName})</option>`);
+    }
+    
+    return options.join('');
+  }
+
+  private formatDateString(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
   private initializeUI(): void {
     this.container.innerHTML = `
       <div class="betting-container">
@@ -30,6 +81,21 @@ export class UIManager {
           <div class="control-group">
             <input type="checkbox" id="only-playing" class="control-checkbox">
             <label for="only-playing" class="checkbox-label">Sadece Oynananmış Maçlar</label>
+          </div>
+        </div>
+        
+        <div class="date-selector-container">
+          <div class="date-controls">
+            <button id="prev-date" class="date-nav-btn">◀</button>
+            <select id="date-selector" class="date-select">
+              ${this.generateDateOptions()}
+            </select>
+            <button id="next-date" class="date-nav-btn">▶</button>
+            <button id="today-btn" class="today-btn">Bugün</button>
+          </div>
+          <div class="date-info">
+            <span class="date-label">Seçili Tarih:</span>
+            <span id="selected-date-display" class="selected-date">${this.selectedDate}</span>
           </div>
         </div>
         
@@ -63,6 +129,7 @@ export class UIManager {
     this.errorElement = document.getElementById('error')!;
     this.matchesContainer = document.getElementById('matches-container')!;
     this.lastUpdated = document.getElementById('last-updated')!;
+    this.dateSelector = document.getElementById('date-selector')!;
 
     // Add event listeners
     document.getElementById('refresh-btn')!.addEventListener('click', () => {
@@ -72,6 +139,107 @@ export class UIManager {
     document.getElementById('retry-btn')!.addEventListener('click', () => {
       this.onRefresh();
     });
+
+    // Date selector event listeners
+    this.dateSelector.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      this.selectedDate = target.value;
+      this.updateSelectedDateDisplay();
+      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+    });
+
+    document.getElementById('prev-date')!.addEventListener('click', () => {
+      this.navigateDate(-1);
+    });
+
+    document.getElementById('next-date')!.addEventListener('click', () => {
+      this.navigateDate(1);
+    });
+
+    document.getElementById('today-btn')!.addEventListener('click', () => {
+      this.goToToday();
+    });
+  }
+
+  private navigateDate(direction: number): void {
+    const currentDate = this.parseDate(this.selectedDate);
+    currentDate.setDate(currentDate.getDate() + direction);
+    const newDateStr = this.formatDateString(currentDate);
+    
+    // Update the selector
+    const selector = this.dateSelector as HTMLSelectElement;
+    const option = Array.from(selector.options).find(opt => opt.value === newDateStr);
+    
+    if (option) {
+      selector.value = newDateStr;
+      this.selectedDate = newDateStr;
+      this.updateSelectedDateDisplay();
+      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+    } else {
+      // If date is not in the list, add it dynamically
+      this.addDateOption(newDateStr);
+      selector.value = newDateStr;
+      this.selectedDate = newDateStr;
+      this.updateSelectedDateDisplay();
+      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+    }
+  }
+
+  private parseDate(dateStr: string): Date {
+    const [day, month, year] = dateStr.split('.').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  private addDateOption(dateStr: string): void {
+    const selector = this.dateSelector as HTMLSelectElement;
+    const option = document.createElement('option');
+    option.value = dateStr;
+    option.textContent = dateStr;
+    
+    // Insert in chronological order
+    const options = Array.from(selector.options);
+    let inserted = false;
+    
+    for (let i = 0; i < options.length; i++) {
+      const optionDate = this.parseDate(options[i].value);
+      const newDate = this.parseDate(dateStr);
+      
+      if (newDate < optionDate) {
+        selector.insertBefore(option, options[i]);
+        inserted = true;
+        break;
+      }
+    }
+    
+    if (!inserted) {
+      selector.appendChild(option);
+    }
+  }
+
+  private goToToday(): void {
+    const todayStr = this.getTodayString();
+    const selector = this.dateSelector as HTMLSelectElement;
+    
+    // Find today's option
+    const todayOption = Array.from(selector.options).find(opt => 
+      opt.value === todayStr || opt.textContent?.includes('Bugün')
+    );
+    
+    if (todayOption) {
+      selector.value = todayOption.value;
+      this.selectedDate = todayOption.value;
+      this.updateSelectedDateDisplay();
+      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+    }
+  }
+
+  private updateSelectedDateDisplay(): void {
+    const display = document.getElementById('selected-date-display')!;
+    const date = this.parseDate(this.selectedDate);
+    const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' });
+    const isToday = this.selectedDate === this.getTodayString();
+    
+    display.textContent = isToday ? `${this.selectedDate} (Bugün - ${dayName})` : `${this.selectedDate} (${dayName})`;
   }
 
   showLoading(): void {
@@ -334,7 +502,7 @@ export class UIManager {
         <div class="no-matches">
           <div class="no-matches-icon">📅</div>
           <h3>Maç bulunamadı</h3>
-          <p>Şu anda mevcut bahis oranı bulunmamaktadır.</p>
+          <p>${this.selectedDate} tarihinde mevcut bahis oranı bulunmamaktadır.</p>
         </div>
       `;
       return;
@@ -397,7 +565,7 @@ export class UIManager {
 
     this.matchesContainer.innerHTML = `
       <div class="betting-table-container">
-        <div class="date-header">27.08.2025</div>
+        <div class="date-header">${this.selectedDate}</div>
         
         <table class="betting-table">
           <thead>
@@ -508,5 +676,13 @@ export class UIManager {
 
   setRefreshHandler(handler: () => void): void {
     this.onRefresh = handler;
+  }
+
+  setDateChangeHandler(handler: (date: string) => void): void {
+    this.onDateChange = handler;
+  }
+
+  getSelectedDate(): string {
+    return this.formatDateForAPI(this.selectedDate);
   }
 }
