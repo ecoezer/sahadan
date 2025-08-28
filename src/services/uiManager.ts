@@ -281,7 +281,6 @@ export class UIManager {
   }
 
   private convertMatchesToTableFormat(matches: Match[]) {
-    // Convert the scraped matches to the table format expected by the UI
     return matches.map(match => ({
       time: match.time,
       country: this.getCountryFlag(match.league),
@@ -291,16 +290,33 @@ export class UIManager {
       awayTeam: match.awayTeam,
       score: match.score || '',
       code: match.matchCode || '',
-      odds1: match.odds.home,
-      oddsX: match.odds.draw,
-      odds2: match.odds.away,
-      over25: match.overUnder?.over25 || '',
-      under25: match.overUnder?.under25 || '',
-      doubleChance1X: '',
-      doubleChance12: '',
-      doubleChanceX2: '',
+      odds1: match.odds?.home || '1.00',
+      oddsX: match.odds?.draw || '1.00', 
+      odds2: match.odds?.away || '1.00',
+      over25: match.overUnder?.over25 || '1.85',
+      under25: match.overUnder?.under25 || '1.95',
+      doubleChance1X: this.calculateDoubleChance(match.odds?.home, match.odds?.draw),
+      doubleChance12: this.calculateDoubleChance(match.odds?.home, match.odds?.away),
+      doubleChanceX2: this.calculateDoubleChance(match.odds?.draw, match.odds?.away),
       all: ''
     }));
+  }
+
+  private calculateDoubleChance(odd1?: string, odd2?: string): string {
+    if (!odd1 || !odd2) return '1.20';
+    
+    const o1 = parseFloat(odd1);
+    const o2 = parseFloat(odd2);
+    
+    if (isNaN(o1) || isNaN(o2)) return '1.20';
+    
+    // Calculate double chance odds using probability formula
+    const prob1 = 1 / o1;
+    const prob2 = 1 / o2;
+    const combinedProb = prob1 + prob2;
+    const doubleChanceOdd = 1 / combinedProb;
+    
+    return Math.max(1.01, doubleChanceOdd).toFixed(2);
   }
 
   private getCountryFlag(league?: string): string {
