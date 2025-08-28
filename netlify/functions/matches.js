@@ -7,12 +7,12 @@ function generateMatchesForDate(dateStr) {
   
   console.log('🗓️ Processing date:', dateStr);
   
-  // Parse the date string - handle DD.MM.YYYY format from UI
+  // Parse the date string - handle DD.MM.YYYY format from UI  
   let selectedDate;
   if (dateStr.includes('.')) {
-    // DD.MM.YYYY format
+    // DD.MM.YYYY format - this is what we receive from UI
     const [day, month, year] = dateStr.split('.');
-    selectedDate = new Date(year, month - 1, day);
+    selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   } else if (dateStr.includes('-')) {
     // YYYY-MM-DD format fallback
     selectedDate = new Date(dateStr);
@@ -31,7 +31,10 @@ function generateMatchesForDate(dateStr) {
     today: today.toISOString().split('T')[0],
     daysDiff: daysDiff,
     dayOfWeek: dayOfWeek,
-    dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
+    dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
+    parsedDay: parseInt(dateStr.split('.')[0]),
+    parsedMonth: parseInt(dateStr.split('.')[1]),
+    parsedYear: parseInt(dateStr.split('.')[2])
   });
   
   // Different match sets based on day of week and date difference
@@ -76,6 +79,8 @@ function generateMatchesForDate(dateStr) {
   // Get base matches for the day
   let baseMatches = matchSets[dayOfWeek] || matchSets[0];
   
+  console.log('🏈 Selected matches for day', dayOfWeek, ':', baseMatches.map(m => `${m.home} vs ${m.away}`));
+  
   // Modify matches based on how far from today
   if (Math.abs(daysDiff) > 7) {
     // Far dates get special matches
@@ -84,21 +89,22 @@ function generateMatchesForDate(dateStr) {
       { home: 'Kasımpaşa', away: 'Alanyaspor', league: 'TUR1', country: '🇹🇷' },
       { home: 'Rizespor', away: 'Hatayspor', league: 'TUR1', country: '🇹🇷' }
     ];
+    console.log('🏈 Using far date matches:', baseMatches.map(m => `${m.home} vs ${m.away}`));
   }
 
   // Generate matches with proper data
   const matches = baseMatches.map((match, index) => {
-    const baseTime = 18 + (index * 2); // Start at 18:00, 20:00, 22:00
+    const baseTime = 18 + (index * 2) + (dayOfWeek % 3); // Vary start times by day
     const minutes = Math.floor(Math.random() * 4) * 15; // 00, 15, 30, 45
     const time = `${baseTime}:${minutes.toString().padStart(2, '0')}`;
     
     // Generate odds based on date difference
-    const oddsVariation = Math.abs(daysDiff) * 0.1;
+    const oddsVariation = Math.abs(daysDiff) * 0.1 + (dayOfWeek * 0.05);
     const baseOdds = [2.10, 3.20, 2.80];
     const odds = baseOdds.map(odd => (odd + (Math.random() - 0.5) * oddsVariation).toFixed(2));
     
     // Generate match code based on date
-    const matchCode = (10000 + Math.abs(daysDiff) * 100 + index * 10 + Math.floor(Math.random() * 10)).toString();
+    const matchCode = (10000 + Math.abs(daysDiff) * 100 + dayOfWeek * 50 + index * 10 + Math.floor(Math.random() * 10)).toString();
     
     // Determine status and score based on whether it's past or future
     let status = '';
@@ -124,7 +130,7 @@ function generateMatchesForDate(dateStr) {
     }
 
     return {
-      id: index + 1 + Math.abs(daysDiff) * 10,
+      id: index + 1 + Math.abs(daysDiff) * 10 + dayOfWeek * 100,
       time: time,
       homeTeam: match.home,
       awayTeam: match.away,
@@ -138,11 +144,13 @@ function generateMatchesForDate(dateStr) {
         away: odds[2]
       },
       overUnder: {
-        over25: (1.80 + Math.random() * 0.4).toFixed(2),
-        under25: (2.00 + Math.random() * 0.4).toFixed(2)
+        over25: (1.80 + Math.random() * 0.4 + dayOfWeek * 0.1).toFixed(2),
+        under25: (2.00 + Math.random() * 0.4 + dayOfWeek * 0.1).toFixed(2)
       }
     };
   });
+
+  console.log('🎯 Final generated matches:', matches.map(m => `${m.homeTeam} vs ${m.awayTeam} (${m.status})`));
 
   return matches;
 }
