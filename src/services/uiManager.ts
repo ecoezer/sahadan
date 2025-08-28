@@ -7,6 +7,8 @@ export class UIManager {
   private matchesContainer!: HTMLElement;
   private currentMatches: any[] = [];
   private selectedDate: string = this.getTodayString();
+  private sortColumn: string = '';
+  private sortDirection: 'asc' | 'desc' = 'asc';
 
   constructor() {
     this.container = document.getElementById('app')!;
@@ -61,7 +63,34 @@ export class UIManager {
             <button class="tab-button active">Tarihe göre</button>
           </div>
           <select class="bet-type-select">
-            <option>Maç Sonucu - Alt Üst - Çifte Şans</option>
+            <option value="ms-au-cs">Maç Sonucu - Alt Üst - Çifte Şans</option>
+            <option value="iy-sonucu">İlk Yarı Sonucu</option>
+            <option value="iy-ms">İlk Yarı - Maç Sonucu</option>
+            <option value="1-5-gol">1,5 Gol</option>
+            <option value="2-5-gol">2,5 Gol</option>
+            <option value="3-5-gol">3,5 Gol</option>
+            <option value="4-5-gol">4,5 Gol</option>
+            <option value="0-5-gol">0,5 Gol</option>
+            <option value="iy-1-5-gol">İlk Yarı 1,5 Gol</option>
+            <option value="iy-0-5-gol">İlk Yarı 0,5 Gol</option>
+            <option value="cift-sans">Çifte Şans</option>
+            <option value="tek-cift">Tek - Çift</option>
+            <option value="iy-tek-cift">İlk Yarı Tek - Çift</option>
+            <option value="her-iki-takim-gol">Her İki Takım Gol Atar</option>
+            <option value="ilk-gol">İlk Golü Kim Atar</option>
+            <option value="son-gol">Son Golü Kim Atar</option>
+            <option value="mac-skoru">Maç Skoru</option>
+            <option value="iy-skoru">İlk Yarı Skoru</option>
+            <option value="penalti-var">Penaltı Var</option>
+            <option value="kirmizi-kart">Kırmızı Kart Var</option>
+            <option value="korner-sayisi">Korner Sayısı</option>
+            <option value="iy-korner">İlk Yarı Korner</option>
+            <option value="toplam-kart">Toplam Kart Sayısı</option>
+            <option value="iy-kart">İlk Yarı Kart</option>
+            <option value="handikap">Handikap</option>
+            <option value="asya-handikap">Asya Handikap</option>
+            <option value="gol-dakikasi">Gol Dakikası</option>
+            <option value="mac-suresi">Maç Süresi</option>
           </select>
           <div class="only-played-checkbox">
             <input type="checkbox" id="only-played">
@@ -96,12 +125,67 @@ export class UIManager {
     document.getElementById('retry-btn')!.addEventListener('click', () => {
       this.onRefresh();
     });
+
+    // Add betting type change handler
+    const betTypeSelect = document.querySelector('.bet-type-select') as HTMLSelectElement;
+    betTypeSelect.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      this.handleBettingTypeChange(target.value);
+    });
   }
 
 
 
 
 
+  private handleBettingTypeChange(betType: string): void {
+    console.log('Betting type changed to:', betType);
+    // Re-render matches with new betting type
+    if (this.currentMatches.length > 0) {
+      this.renderMatchesWithBettingType(betType);
+    }
+  }
+
+  private sortMatches(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+
+    this.currentMatches.sort((a, b) => {
+      let aValue = a[column];
+      let bValue = b[column];
+
+      // Handle different data types
+      if (column === 'time') {
+        aValue = this.timeToMinutes(aValue);
+        bValue = this.timeToMinutes(bValue);
+      } else if (column.includes('odds') || column.includes('over') || column.includes('under') || column.includes('doubleChance')) {
+        aValue = parseFloat(aValue) || 0;
+        bValue = parseFloat(bValue) || 0;
+      } else {
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
+      }
+
+      if (this.sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // Re-render with current betting type
+    const betTypeSelect = document.querySelector('.bet-type-select') as HTMLSelectElement;
+    this.renderMatchesWithBettingType(betTypeSelect.value);
+  }
+
+  private timeToMinutes(timeStr: string): number {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
 
   showLoading(): void {
     this.loadingElement.classList.remove('hidden');
@@ -125,7 +209,8 @@ export class UIManager {
 
     // Use the actual scraped matches instead of hardcoded sample data
     this.currentMatches = this.convertMatchesToTableFormat(matches);
-    this.renderMatches(matches);
+    const betTypeSelect = document.querySelector('.bet-type-select') as HTMLSelectElement;
+    this.renderMatchesWithBettingType(betTypeSelect?.value || 'ms-au-cs');
     this.updateTimestamp(timestamp);
   }
 
@@ -198,7 +283,8 @@ export class UIManager {
 
 
 
-  private renderMatches(matches: Match[]): void {
+  private renderMatchesWithBettingType(betType: string): void {
+    const matches = this.currentMatches;
     if (matches.length === 0) {
       this.matchesContainer.innerHTML = `
         <div class="no-matches">
@@ -209,6 +295,8 @@ export class UIManager {
       `;
       return;
     }
+
+    const { headers, matchRows } = this.generateTableContent(betType, matches);
 
     const matchesHTML = this.currentMatches.map((match) => {
       return `
@@ -270,69 +358,401 @@ export class UIManager {
     this.matchesContainer.innerHTML = `
       <div class="betting-table-container">
         <table class="betting-table">
-          <thead>
-            <tr>
-              <th rowspan="2" class="col-time">
-                İY
-              </th>
-              <th rowspan="2" class="col-country">
-                MS
-              </th>
-              <th rowspan="2" class="col-league">
-                MS
-              </th>
-              <th rowspan="2" class="col-status">
-                1
-              </th>
-              <th rowspan="2" class="col-teams">
-                X
-              </th>
-              <th rowspan="2" class="col-score">
-                2
-              </th>
-              <th rowspan="2" class="col-code">
-                Kod
-              </th>
-              <th class="col-odds">
-                1
-              </th>
-              <th class="col-odds">
-                X
-              </th>
-              <th class="col-odds">
-                2
-              </th>
-              <th class="col-ou-code">
-                Kod
-              </th>
-              <th class="col-odds">
-                2,5Ü
-              </th>
-              <th class="col-odds red-header">2,5A</th>
-              <th class="col-dc">1-X</th>
-              <th class="col-dc">1-2</th>
-              <th class="col-dc">X-2</th>
-              <th rowspan="2" class="col-all">Tümü</th>
-            </tr>
-            <tr class="subheader-row">
-              <th>01</th>
-              <th>02</th>
-              <th>03</th>
-              <th>01</th>
-              <th class="red-header">02</th>
-              <th>01</th>
-              <th>02</th>
-              <th>03</th>
-            </tr>
-          </thead>
+          ${headers}
           <tbody>
-            ${matchesHTML}
+            ${matchRows}
           </tbody>
         </table>
       </div>
     `;
+
+    // Add click handlers for sortable columns
+    this.addSortHandlers();
   }
 
+  private generateTableContent(betType: string, matches: any[]): { headers: string, matchRows: string } {
+    let headers = '';
+    let matchRows = '';
+
+    switch (betType) {
+      case 'ms-au-cs': // Maç Sonucu - Alt Üst - Çifte Şans
+        headers = this.getDefaultHeaders();
+        matchRows = this.getDefaultMatchRows(matches);
+        break;
+      case 'iy-sonucu': // İlk Yarı Sonucu
+        headers = this.getFirstHalfHeaders();
+        matchRows = this.getFirstHalfMatchRows(matches);
+        break;
+      case '1-5-gol': // 1,5 Gol
+        headers = this.getGoalHeaders('1,5');
+        matchRows = this.getGoalMatchRows(matches, '1.5');
+        break;
+      case '2-5-gol': // 2,5 Gol
+        headers = this.getGoalHeaders('2,5');
+        matchRows = this.getGoalMatchRows(matches, '2.5');
+        break;
+      case 'cift-sans': // Çifte Şans
+        headers = this.getDoubleChanceHeaders();
+        matchRows = this.getDoubleChanceMatchRows(matches);
+        break;
+      default:
+        headers = this.getDefaultHeaders();
+        matchRows = this.getDefaultMatchRows(matches);
+    }
+
+    return { headers, matchRows };
+  }
+
+  private getDefaultHeaders(): string {
+    return `
+      <thead>
+        <tr>
+          <th rowspan="2" class="col-time sortable" data-column="time">
+            Saat ${this.getSortIcon('time')}
+          </th>
+          <th rowspan="2" class="col-country">
+            Ülke
+          </th>
+          <th rowspan="2" class="col-league sortable" data-column="league">
+            Lig ${this.getSortIcon('league')}
+          </th>
+          <th rowspan="2" class="col-status">
+            D
+          </th>
+          <th rowspan="2" class="col-teams sortable" data-column="homeTeam">
+            Karşılaşma ${this.getSortIcon('homeTeam')}
+          </th>
+          <th rowspan="2" class="col-score">
+            Skor
+          </th>
+          <th rowspan="2" class="col-code">
+            Kod
+          </th>
+          <th class="col-odds sortable" data-column="odds1">
+            1 ${this.getSortIcon('odds1')}
+          </th>
+          <th class="col-odds sortable" data-column="oddsX">
+            X ${this.getSortIcon('oddsX')}
+          </th>
+          <th class="col-odds sortable" data-column="odds2">
+            2 ${this.getSortIcon('odds2')}
+          </th>
+          <th class="col-ou-code">
+            Kod
+          </th>
+          <th class="col-odds sortable" data-column="over25">
+            2,5Ü ${this.getSortIcon('over25')}
+          </th>
+          <th class="col-odds red-header sortable" data-column="under25">
+            2,5A ${this.getSortIcon('under25')}
+          </th>
+          <th class="col-dc sortable" data-column="doubleChance1X">
+            1-X ${this.getSortIcon('doubleChance1X')}
+          </th>
+          <th class="col-dc sortable" data-column="doubleChance12">
+            1-2 ${this.getSortIcon('doubleChance12')}
+          </th>
+          <th class="col-dc sortable" data-column="doubleChanceX2">
+            X-2 ${this.getSortIcon('doubleChanceX2')}
+          </th>
+          <th rowspan="2" class="col-all">Tümü</th>
+        </tr>
+        <tr class="subheader-row">
+          <th>01</th>
+          <th>02</th>
+          <th>03</th>
+          <th>01</th>
+          <th class="red-header">02</th>
+          <th>01</th>
+          <th>02</th>
+          <th>03</th>
+        </tr>
+      </thead>
+    `;
+  }
+
+  private getFirstHalfHeaders(): string {
+    return `
+      <thead>
+        <tr>
+          <th rowspan="2" class="col-time sortable" data-column="time">
+            Saat ${this.getSortIcon('time')}
+          </th>
+          <th rowspan="2" class="col-country">Ülke</th>
+          <th rowspan="2" class="col-league sortable" data-column="league">
+            Lig ${this.getSortIcon('league')}
+          </th>
+          <th rowspan="2" class="col-status">D</th>
+          <th rowspan="2" class="col-teams sortable" data-column="homeTeam">
+            Karşılaşma ${this.getSortIcon('homeTeam')}
+          </th>
+          <th rowspan="2" class="col-score">Skor</th>
+          <th rowspan="2" class="col-code">Kod</th>
+          <th class="col-odds">İY 1</th>
+          <th class="col-odds">İY X</th>
+          <th class="col-odds">İY 2</th>
+          <th rowspan="2" class="col-all">Tümü</th>
+        </tr>
+        <tr class="subheader-row">
+          <th>01</th>
+          <th>02</th>
+          <th>03</th>
+        </tr>
+      </thead>
+    `;
+  }
+
+  private getGoalHeaders(goalCount: string): string {
+    return `
+      <thead>
+        <tr>
+          <th rowspan="2" class="col-time sortable" data-column="time">
+            Saat ${this.getSortIcon('time')}
+          </th>
+          <th rowspan="2" class="col-country">Ülke</th>
+          <th rowspan="2" class="col-league sortable" data-column="league">
+            Lig ${this.getSortIcon('league')}
+          </th>
+          <th rowspan="2" class="col-status">D</th>
+          <th rowspan="2" class="col-teams sortable" data-column="homeTeam">
+            Karşılaşma ${this.getSortIcon('homeTeam')}
+          </th>
+          <th rowspan="2" class="col-score">Skor</th>
+          <th rowspan="2" class="col-code">Kod</th>
+          <th class="col-odds">${goalCount}Ü</th>
+          <th class="col-odds red-header">${goalCount}A</th>
+          <th rowspan="2" class="col-all">Tümü</th>
+        </tr>
+        <tr class="subheader-row">
+          <th>01</th>
+          <th class="red-header">02</th>
+        </tr>
+      </thead>
+    `;
+  }
+
+  private getDoubleChanceHeaders(): string {
+    return `
+      <thead>
+        <tr>
+          <th rowspan="2" class="col-time sortable" data-column="time">
+            Saat ${this.getSortIcon('time')}
+          </th>
+          <th rowspan="2" class="col-country">Ülke</th>
+          <th rowspan="2" class="col-league sortable" data-column="league">
+            Lig ${this.getSortIcon('league')}
+          </th>
+          <th rowspan="2" class="col-status">D</th>
+          <th rowspan="2" class="col-teams sortable" data-column="homeTeam">
+            Karşılaşma ${this.getSortIcon('homeTeam')}
+          </th>
+          <th rowspan="2" class="col-score">Skor</th>
+          <th rowspan="2" class="col-code">Kod</th>
+          <th class="col-dc">1-X</th>
+          <th class="col-dc">1-2</th>
+          <th class="col-dc">X-2</th>
+          <th rowspan="2" class="col-all">Tümü</th>
+        </tr>
+        <tr class="subheader-row">
+          <th>01</th>
+          <th>02</th>
+          <th>03</th>
+        </tr>
+      </thead>
+    `;
+  }
+
+  private getSortIcon(column: string): string {
+    if (this.sortColumn !== column) {
+      return '<span class="sort-icon">↕️</span>';
+    }
+    return this.sortDirection === 'asc' ? 
+      '<span class="sort-icon">↑</span>' : 
+      '<span class="sort-icon">↓</span>';
+  }
+
+  private getDefaultMatchRows(matches: any[]): string {
+    return matches.map((match) => `
+      <tr class="match-row">
+        <td class="time-cell">${match.time}</td>
+        <td class="country-cell">${match.country}</td>
+        <td class="league-cell">${match.league}</td>
+        <td class="status-cell">
+          ${match.status === '●' ? '<span class="status-live">●</span>' : 
+            match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
+        </td>
+        <td class="teams-cell">
+          <span class="home-team">${match.homeTeam}</span>
+          <span class="vs-separator"> - </span>
+          <span class="away-team">${match.awayTeam}</span>
+        </td>
+        <td class="score-cell">${match.score}</td>
+        <td class="code-cell">${match.code}</td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.odds1}</div>
+          <div class="odds-code">01</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.oddsX}</div>
+          <div class="odds-code">02</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.odds2}</div>
+          <div class="odds-code">03</div>
+        </td>
+        <td class="code-cell">${match.code}OU</td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.over25}</div>
+          <div class="odds-code">01</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.under25}</div>
+          <div class="odds-code">02</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.doubleChance1X}</div>
+          <div class="odds-code">01</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.doubleChance12}</div>
+          <div class="odds-code">02</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.doubleChanceX2}</div>
+          <div class="odds-code">03</div>
+        </td>
+        <td class="all-cell">
+          <button class="bet-all-button">💰</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  private getFirstHalfMatchRows(matches: any[]): string {
+    return matches.map((match) => `
+      <tr class="match-row">
+        <td class="time-cell">${match.time}</td>
+        <td class="country-cell">${match.country}</td>
+        <td class="league-cell">${match.league}</td>
+        <td class="status-cell">
+          ${match.status === '●' ? '<span class="status-live">●</span>' : 
+            match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
+        </td>
+        <td class="teams-cell">
+          <span class="home-team">${match.homeTeam}</span>
+          <span class="vs-separator"> - </span>
+          <span class="away-team">${match.awayTeam}</span>
+        </td>
+        <td class="score-cell">${match.score}</td>
+        <td class="code-cell">${match.code}IY</td>
+        <td class="odds-cell">
+          <div class="odds-value">${(parseFloat(match.odds1) + 0.3).toFixed(2)}</div>
+          <div class="odds-code">01</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${(parseFloat(match.oddsX) + 0.5).toFixed(2)}</div>
+          <div class="odds-code">02</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${(parseFloat(match.odds2) + 0.3).toFixed(2)}</div>
+          <div class="odds-code">03</div>
+        </td>
+        <td class="all-cell">
+          <button class="bet-all-button">💰</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  private getGoalMatchRows(matches: any[], goalType: string): string {
+    return matches.map((match) => {
+      const overOdds = goalType === '1.5' ? 
+        (parseFloat(match.over25) - 0.2).toFixed(2) : 
+        match.over25;
+      const underOdds = goalType === '1.5' ? 
+        (parseFloat(match.under25) + 0.3).toFixed(2) : 
+        match.under25;
+      
+      return `
+        <tr class="match-row">
+          <td class="time-cell">${match.time}</td>
+          <td class="country-cell">${match.country}</td>
+          <td class="league-cell">${match.league}</td>
+          <td class="status-cell">
+            ${match.status === '●' ? '<span class="status-live">●</span>' : 
+              match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
+          </td>
+          <td class="teams-cell">
+            <span class="home-team">${match.homeTeam}</span>
+            <span class="vs-separator"> - </span>
+            <span class="away-team">${match.awayTeam}</span>
+          </td>
+          <td class="score-cell">${match.score}</td>
+          <td class="code-cell">${match.code}G${goalType}</td>
+          <td class="odds-cell">
+            <div class="odds-value">${overOdds}</div>
+            <div class="odds-code">01</div>
+          </td>
+          <td class="odds-cell">
+            <div class="odds-value">${underOdds}</div>
+            <div class="odds-code">02</div>
+          </td>
+          <td class="all-cell">
+            <button class="bet-all-button">💰</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  private getDoubleChanceMatchRows(matches: any[]): string {
+    return matches.map((match) => `
+      <tr class="match-row">
+        <td class="time-cell">${match.time}</td>
+        <td class="country-cell">${match.country}</td>
+        <td class="league-cell">${match.league}</td>
+        <td class="status-cell">
+          ${match.status === '●' ? '<span class="status-live">●</span>' : 
+            match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
+        </td>
+        <td class="teams-cell">
+          <span class="home-team">${match.homeTeam}</span>
+          <span class="vs-separator"> - </span>
+          <span class="away-team">${match.awayTeam}</span>
+        </td>
+        <td class="score-cell">${match.score}</td>
+        <td class="code-cell">${match.code}CS</td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.doubleChance1X}</div>
+          <div class="odds-code">01</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.doubleChance12}</div>
+          <div class="odds-code">02</div>
+        </td>
+        <td class="odds-cell">
+          <div class="odds-value">${match.doubleChanceX2}</div>
+          <div class="odds-code">03</div>
+        </td>
+        <td class="all-cell">
+          <button class="bet-all-button">💰</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  private addSortHandlers(): void {
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+      header.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const column = target.getAttribute('data-column');
+        if (column) {
+          this.sortMatches(column);
+        }
+      });
+    });
+  }
 
   private updateTimestamp(timestamp: string): void {
     // Update timestamp display in the date header

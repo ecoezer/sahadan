@@ -357,6 +357,27 @@ body {
   background: #006600;
 }
 
+/* Sortable headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.sortable:hover {
+  background: #e0f0e0 !important;
+}
+
+.sort-icon {
+  font-size: 10px;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.sortable:hover .sort-icon {
+  opacity: 1;
+}
+
 /* Loading and Error States */
 .loading {
   display: flex;
