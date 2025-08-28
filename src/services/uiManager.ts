@@ -353,7 +353,7 @@ export class UIManager {
     this.onRefresh = handler;
   }
 
-  setDateChangeHandler(handler: (date: string) => void): void {
+  setDateChangeHandler(_handler: (date: string) => void): void {
     // Date change handler would be used here if we had date selection UI
   }
 
