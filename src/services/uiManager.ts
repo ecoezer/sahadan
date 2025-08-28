@@ -70,44 +70,44 @@ export class UIManager {
   private initializeUI(): void {
     this.container.innerHTML = `
       <div class="betting-container">
-        <div class="header-controls">
-          <div class="control-group">
-            <button class="control-button inactive">Lige göre</button>
-            <button class="control-button active">Tarihe göre</button>
+        <div class="top-controls">
+          <div class="sport-checkboxes">
+            <div class="sport-checkbox">
+              <input type="checkbox" id="futbol" checked>
+              <label for="futbol">⚽ Futbol</label>
+            </div>
+            <div class="sport-checkbox">
+              <input type="checkbox" id="basketbol">
+              <label for="basketbol">🏀 Basketbol</label>
+            </div>
           </div>
-          <div class="control-group">
-            <select class="control-select">
-              <option>Maç Sonucu - Alt Üst - Çifte Şans</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <input type="checkbox" id="only-playing" class="control-checkbox">
-            <label for="only-playing" class="checkbox-label">Sadece Oynananmış Maçlar</label>
-          </div>
-        </div>
-        
-        <div class="date-selector-container">
           <div class="date-controls">
-            <button id="prev-date" class="date-nav-btn">◀</button>
-            <select id="date-selector" class="date-select">
-              ${this.generateDateOptions()}
+            <span class="date-label">Tarih :</span>
+            <select class="date-select">
+              <option>28.08.2025 Per</option>
             </select>
-            <button id="next-date" class="date-nav-btn">▶</button>
-            <button id="today-btn" class="today-btn">Bugün</button>
-          </div>
-          <div class="date-info">
-            <span class="date-label">Seçili Tarih:</span>
-            <span id="selected-date-display" class="selected-date">${this.selectedDate}</span>
+            <span class="date-label">Lig :</span>
+            <select class="league-select">
+              <option>Hepsi</option>
+            </select>
           </div>
         </div>
         
-        <div class="controls">
-          <button id="refresh-btn" class="refresh-btn">
-            <span class="refresh-icon">🔄</span>
-            Verileri Yenile
-          </button>
-          <div id="last-updated" class="last-updated"></div>
+        <div class="tab-controls">
+          <div class="tab-buttons">
+            <button class="tab-button">Lige göre</button>
+            <button class="tab-button active">Tarihe göre</button>
+          </div>
+          <select class="bet-type-select">
+            <option>Maç Sonucu - Alt Üst - Çifte Şans</option>
+          </select>
+          <div class="only-played-checkbox">
+            <input type="checkbox" id="only-played">
+            <label for="only-played">Sadece Oynanmamış Maçlar</label>
+          </div>
         </div>
+        
+        <div class="date-header">${this.selectedDate}</div>
         
         <div id="loading" class="loading">
           <div class="spinner"></div>
@@ -130,39 +130,9 @@ export class UIManager {
     this.loadingElement = document.getElementById('loading')!;
     this.errorElement = document.getElementById('error')!;
     this.matchesContainer = document.getElementById('matches-container')!;
-    this.lastUpdated = document.getElementById('last-updated')!;
-    this.dateSelector = document.getElementById('date-selector')!;
-
-    // Add event listeners
-    document.getElementById('refresh-btn')!.addEventListener('click', () => {
-      this.onRefresh();
-    });
 
     document.getElementById('retry-btn')!.addEventListener('click', () => {
       this.onRefresh();
-    });
-
-    // Date selector event listeners
-    this.dateSelector.addEventListener('change', (e) => {
-      const target = e.target as HTMLSelectElement;
-      this.selectedDate = target.value;
-      console.log('📅 Date selector changed to:', this.selectedDate);
-      this.updateSelectedDateDisplay();
-      const apiDate = this.formatDateForAPI(this.selectedDate);
-      console.log('🚀 Calling onDateChange with:', apiDate);
-      this.onDateChange(apiDate);
-    });
-
-    document.getElementById('prev-date')!.addEventListener('click', () => {
-      this.navigateDate(-1);
-    });
-
-    document.getElementById('next-date')!.addEventListener('click', () => {
-      this.navigateDate(1);
-    });
-
-    document.getElementById('today-btn')!.addEventListener('click', () => {
-      this.goToToday();
     });
   }
 
@@ -546,61 +516,59 @@ export class UIManager {
 
     this.matchesContainer.innerHTML = `
       <div class="betting-table-container">
-        <div class="date-header">${this.selectedDate}</div>
-        
         <table class="betting-table">
           <thead>
-            <tr class="table-header-row">
-              <th rowspan="2" class="time-header sortable" data-column="time">
-                IY <span class="sort-indicator"></span>
+            <tr>
+              <th rowspan="2" class="col-time">
+                İY
               </th>
-              <th rowspan="2" class="country-header sortable" data-column="country">
-                MS <span class="sort-indicator"></span>
+              <th rowspan="2" class="col-country">
+                MS
               </th>
-              <th rowspan="2" class="league-header sortable" data-column="league">
-                MS <span class="sort-indicator"></span>
+              <th rowspan="2" class="col-league">
+                MS
               </th>
-              <th rowspan="2" class="status-header sortable" data-column="status">
-                1 <span class="sort-indicator"></span>
+              <th rowspan="2" class="col-status">
+                1
               </th>
-              <th rowspan="2" class="teams-header sortable" data-column="homeTeam">
-                X <span class="sort-indicator"></span>
+              <th rowspan="2" class="col-teams">
+                X
               </th>
-              <th rowspan="2" class="score-header sortable" data-column="score">
-                2 <span class="sort-indicator"></span>
+              <th rowspan="2" class="col-score">
+                2
               </th>
-              <th rowspan="2" class="code-header sortable" data-column="code">
-                Kod <span class="sort-indicator"></span>
+              <th rowspan="2" class="col-code">
+                Kod
               </th>
-              <th class="odds-header sortable" data-column="odds1">
-                1 <span class="sort-indicator"></span>
+              <th class="col-odds">
+                1
               </th>
-              <th class="odds-header sortable" data-column="oddsX">
-                X <span class="sort-indicator"></span>
+              <th class="col-odds">
+                X
               </th>
-              <th class="odds-header sortable" data-column="odds2">
-                2 <span class="sort-indicator"></span>
+              <th class="col-odds">
+                2
               </th>
-              <th class="odds-header sortable" data-column="under25">
-                2,5 Gol <span class="sort-indicator"></span>
+              <th class="col-odds">
+                2,5 Gol
               </th>
-              <th class="odds-header red-header">2,5A</th>
-              <th class="odds-header">ÇŞ</th>
-              <th class="odds-header">1-X</th>
-              <th class="odds-header">1-2</th>
-              <th class="odds-header">X-2</th>
-              <th rowspan="2" class="all-header">Tümü</th>
+              <th class="col-odds red-header">2,5A</th>
+              <th class="col-ou-code">ÇŞ</th>
+              <th class="col-dc">1-X</th>
+              <th class="col-dc">1-2</th>
+              <th class="col-dc">X-2</th>
+              <th rowspan="2" class="col-all">Tümü</th>
             </tr>
-            <tr class="table-subheader-row">
-              <th class="odds-subheader">01</th>
-              <th class="odds-subheader">02</th>
-              <th class="odds-subheader">03</th>
-              <th class="odds-subheader">Kod</th>
-              <th class="odds-subheader red-subheader">02▲</th>
-              <th class="odds-subheader">Kod</th>
-              <th class="odds-subheader">01</th>
-              <th class="odds-subheader">02</th>
-              <th class="odds-subheader">03</th>
+            <tr class="subheader-row">
+              <th>01</th>
+              <th>02</th>
+              <th>03</th>
+              <th>Kod</th>
+              <th class="red-header">02</th>
+              <th>Kod</th>
+              <th>01</th>
+              <th>02</th>
+              <th>03</th>
             </tr>
           </thead>
           <tbody>
@@ -609,18 +577,6 @@ export class UIManager {
         </table>
       </div>
     `;
-
-    // Add click event listeners to sortable headers
-    const sortableHeaders = this.matchesContainer.querySelectorAll('.sortable');
-    sortableHeaders.forEach(header => {
-      header.addEventListener('click', () => {
-        const column = header.getAttribute('data-column');
-        if (column) {
-          this.sortMatches(column);
-          this.updateSortIndicators();
-        }
-      });
-    });
   }
 
   private updateSortIndicators(): void {
