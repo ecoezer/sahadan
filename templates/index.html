@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahadan Scraper - Heroku</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            margin: 20px 30px;
+            border-radius: 5px;
+        }
+        
+        .results {
+            padding: 30px;
+        }
+        
+        .match-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+        
+        .match-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .match-teams {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .match-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #666;
+        }
+        
+        .odds {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .odd {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🇹🇷 Sahadan Scraper</h1>
+            <p>Web Scraping with Python & Selenium on Heroku</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="startScraping()" id="scrapeBtn">
+                🚀 Start Scraping
+            </button>
+            <button class="btn" onclick="refreshData()" id="refreshBtn">
+                🔄 Refresh Data
+            </button>
+        </div>
+        
+        <div class="status" id="status">
+            <strong>Status:</strong> Ready to scrape
+        </div>
+        
+        <div class="results" id="results">
+            <div class="loading">
+                <p>Click "Start Scraping" to extract match data from Sahadan</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isScrapingRunning = false;
+        
+        async function startScraping() {
+            if (isScrapingRunning) return;
+            
+            const btn = document.getElementById('scrapeBtn');
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Scraping...';
+            isScrapingRunning = true;
+            
+            status.innerHTML = '<strong>Status:</strong> Scraping in progress...';
+            results.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Extracting match data from Sahadan...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/scrape', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    // Poll for results
+                    pollForResults();
+                } else {
+                    throw new Error('Failed to start scraping');
+                }
+            } catch (error) {
+                status.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                btn.disabled = false;
+                btn.textContent = '🚀 Start Scraping';
+                isScrapingRunning = false;
+            }
+        }
+        
+        async function pollForResults() {
+            try {
+                const response = await fetch('/api/status');
+                const statusData = await response.json();
+                
+                if (statusData.running) {
+                    setTimeout(pollForResults, 2000);
+                } else {
+                    // Scraping finished, get results
+                    await refreshData();
+                    const btn = document.getElementById('scrapeBtn');
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Start Scraping';
+                    isScrapingRunning = false;
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+                setTimeout(pollForResults, 5000);
+            }
+        }
+        
+        async function refreshData() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                
+                displayResults(data);
+                updateStatus(data.status);
+            } catch (error) {
+                console.error('Refresh error:', error);
+            }
+        }
+        
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            const matches = data.matches || [];
+            
+            if (matches.length === 0) {
+                results.innerHTML = `
+                    <div class="loading">
+                        <p>No matches found. Try scraping again.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">${matches.length}</div>
+                        <div class="stat-label">Total Matches</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${matches.filter(m => m.home_team && m.away_team).length}</div>
+                        <div class="stat-label">Valid Matches</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${matches.filter(m => m.odds_1).length}</div>
+                        <div class="stat-label">With Odds</div>
+                    </div>
+                </div>
+            `;
+            
+            matches.forEach(match => {
+                html += `
+                    <div class="match-card">
+                        <div class="match-teams">
+                            ${match.home_team || 'Team A'} vs ${match.away_team || 'Team B'}
+                        </div>
+                        <div class="match-details">
+                            <span>⏰ ${match.time || 'TBD'}</span>
+                            <div class="odds">
+                                ${match.odds_1 ? `<span class="odd">1: ${match.odds_1}</span>` : ''}
+                                ${match.odds_x ? `<span class="odd">X: ${match.odds_x}</span>` : ''}
+                                ${match.odds_2 ? `<span class="odd">2: ${match.odds_2}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            results.innerHTML = html;
+        }
+        
+        function updateStatus(status) {
+            const statusEl = document.getElementById('status');
+            
+            if (status.running) {
+                statusEl.innerHTML = '<strong>Status:</strong> Scraping in progress...';
+            } else if (status.last_update) {
+                statusEl.innerHTML = `<strong>Status:</strong> Last updated: ${status.last_update}`;
+            } else {
+                statusEl.innerHTML = '<strong>Status:</strong> Ready to scrape';
+            }
+        }
+        
+        // Auto-refresh data on page load
+        refreshData();
+    </script>
+</body>
+</html>
