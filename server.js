@@ -11,9 +11,33 @@ app.use(express.json());
 // Sample match data generator based on date
 function generateMatchesForDate(dateStr) {
   const today = new Date();
-  const selectedDate = new Date(dateStr);
+  today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+  
+  // Parse the date string - handle both YYYY-MM-DD and DD.MM.YYYY formats
+  let selectedDate;
+  if (dateStr.includes('-')) {
+    // YYYY-MM-DD format from API
+    selectedDate = new Date(dateStr);
+  } else if (dateStr.includes('.')) {
+    // DD.MM.YYYY format
+    const [day, month, year] = dateStr.split('.');
+    selectedDate = new Date(year, month - 1, day);
+  } else {
+    // Fallback to today
+    selectedDate = new Date();
+  }
+  selectedDate.setHours(0, 0, 0, 0); // Reset time to start of day
+  
   const daysDiff = Math.floor((selectedDate - today) / (1000 * 60 * 60 * 24));
   const dayOfWeek = selectedDate.getDay();
+  
+  console.log('Date parsing:', {
+    input: dateStr,
+    selectedDate: selectedDate.toISOString().split('T')[0],
+    today: today.toISOString().split('T')[0],
+    daysDiff: daysDiff,
+    dayOfWeek: dayOfWeek
+  });
   
   // Different match sets based on day of week and date difference
   const matchSets = {
