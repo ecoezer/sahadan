@@ -358,6 +358,34 @@ exports.handler = async (event, context) => {
         const html = await response.text();
         console.log('✅ Successfully fetched HTML, length:', html.length);
         
+        // Debug: Log HTML structure analysis
+        console.log('🔍 HTML STRUCTURE ANALYSIS:');
+        console.log('- Total <tr> elements:', (html.match(/<tr/gi) || []).length);
+        console.log('- Total <td> elements:', (html.match(/<td/gi) || []).length);
+        console.log('- Total <table> elements:', (html.match(/<table/gi) || []).length);
+        console.log('- Contains "Iddaa":', html.includes('Iddaa') || html.includes('İddaa'));
+        console.log('- Contains time patterns:', (html.match(/\d{1,2}:\d{2}/g) || []).length);
+        console.log('- Contains team separators:', (html.match(/[-–]/g) || []).length);
+        console.log('- Contains odds patterns:', (html.match(/\d+[.,]\d{2}/g) || []).length);
+        
+        // Debug: Log sample HTML content
+        const htmlSample = html.substring(0, 2000);
+        console.log('🔍 HTML SAMPLE (first 2000 chars):', htmlSample);
+        
+        // Debug: Look for specific sahadan elements
+        const tableMatches = html.match(/<table[^>]*>/gi) || [];
+        console.log('🔍 FOUND TABLES:', tableMatches.length);
+        tableMatches.forEach((table, index) => {
+          console.log(`Table ${index + 1}:`, table.substring(0, 200));
+        });
+        
+        // Debug: Look for rows with potential match data
+        const rowsWithTime = html.match(/<tr[^>]*>.*?\d{1,2}:\d{2}.*?<\/tr>/gi) || [];
+        console.log('🔍 ROWS WITH TIME PATTERNS:', rowsWithTime.length);
+        rowsWithTime.slice(0, 3).forEach((row, index) => {
+          console.log(`Time Row ${index + 1}:`, row.substring(0, 300));
+        });
+        
         const scrapedMatches = parseMatchesFromHTML(html);
         
         if (scrapedMatches && scrapedMatches.length > 0) {
@@ -369,11 +397,19 @@ exports.handler = async (event, context) => {
             extractedMatches: matches.length,
             sampleData: false,
             parser: 'enhanced-html-parser',
-            scrapingSuccess: true
+            scrapingSuccess: true,
+            htmlStructure: {
+              totalTrElements: (html.match(/<tr/gi) || []).length,
+              totalTdElements: (html.match(/<td/gi) || []).length,
+              totalTableElements: (html.match(/<table/gi) || []).length,
+              timePatterns: (html.match(/\d{1,2}:\d{2}/g) || []).length,
+              oddsPatterns: (html.match(/\d+[.,]\d{2}/g) || []).length
+            }
           };
           console.log('🎉 Successfully scraped', matches.length, 'matches from sahadan.com');
         } else {
           console.log('⚠️ No matches found in scraped content, using fallback');
+          console.log('🔍 PARSING FAILED - HTML might have different structure');
           matches = generateFallbackMatches(date);
         }
       } else {
