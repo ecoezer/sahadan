@@ -11,6 +11,7 @@ export interface Match {
   league?: string;
   matchCode?: string;
   status?: 'upcoming' | 'live' | 'finished';
+  score?: string;
   overUnder?: {
     over25: string;
     under25: string;
