@@ -239,6 +239,7 @@ export class UIManager {
             <div class="odds-value">${match.odds2}</div>
             <div class="odds-code">03</div>
           </td>
+          <td class="code-cell">${match.code}OU</td>
           <td class="odds-cell">
             <div class="odds-value">${match.over25}</div>
             <div class="odds-code">01</div>
@@ -301,11 +302,13 @@ export class UIManager {
               <th class="col-odds">
                 2
               </th>
+              <th class="col-ou-code">
+                Kod
+              </th>
               <th class="col-odds">
-                2,5 Gol
+                2,5Ü
               </th>
               <th class="col-odds red-header">2,5A</th>
-              <th class="col-ou-code">ÇŞ</th>
               <th class="col-dc">1-X</th>
               <th class="col-dc">1-2</th>
               <th class="col-dc">X-2</th>
@@ -315,9 +318,8 @@ export class UIManager {
               <th>01</th>
               <th>02</th>
               <th>03</th>
-              <th>Kod</th>
+              <th>01</th>
               <th class="red-header">02</th>
-              <th>Kod</th>
               <th>01</th>
               <th>02</th>
               <th>03</th>
