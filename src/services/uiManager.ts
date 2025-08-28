@@ -26,8 +26,11 @@ export class UIManager {
   }
 
   private formatDateForAPI(dateStr: string): string {
-    // Keep the DD.MM.YYYY format as the API expects it
-    return dateStr;
+    // Always return the date in DD.MM.YYYY format as the server expects it
+    console.log('🔄 formatDateForAPI input:', dateStr);
+    const result = dateStr; // Keep original DD.MM.YYYY format
+    console.log('🔄 formatDateForAPI output:', result);
+    return result;
   }
 
   private generateDateOptions(): string {
@@ -143,8 +146,11 @@ export class UIManager {
     this.dateSelector.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
       this.selectedDate = target.value;
+      console.log('📅 Date selector changed to:', this.selectedDate);
       this.updateSelectedDateDisplay();
-      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+      const apiDate = this.formatDateForAPI(this.selectedDate);
+      console.log('🚀 Calling onDateChange with:', apiDate);
+      this.onDateChange(apiDate);
     });
 
     document.getElementById('prev-date')!.addEventListener('click', () => {
@@ -164,6 +170,7 @@ export class UIManager {
     const currentDate = this.parseDate(this.selectedDate);
     currentDate.setDate(currentDate.getDate() + direction);
     const newDateStr = this.formatDateString(currentDate);
+    console.log('🔄 Navigate date:', direction, 'New date:', newDateStr);
     
     // Update the selector
     const selector = this.dateSelector as HTMLSelectElement;
@@ -173,14 +180,18 @@ export class UIManager {
       selector.value = newDateStr;
       this.selectedDate = newDateStr;
       this.updateSelectedDateDisplay();
-      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+      const apiDate = this.formatDateForAPI(this.selectedDate);
+      console.log('🚀 Navigate calling onDateChange with:', apiDate);
+      this.onDateChange(apiDate);
     } else {
       // If date is not in the list, add it dynamically
       this.addDateOption(newDateStr);
       selector.value = newDateStr;
       this.selectedDate = newDateStr;
       this.updateSelectedDateDisplay();
-      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+      const apiDate = this.formatDateForAPI(this.selectedDate);
+      console.log('🚀 Navigate (new option) calling onDateChange with:', apiDate);
+      this.onDateChange(apiDate);
     }
   }
 
@@ -228,7 +239,9 @@ export class UIManager {
       selector.value = todayOption.value;
       this.selectedDate = todayOption.value;
       this.updateSelectedDateDisplay();
-      this.onDateChange(this.formatDateForAPI(this.selectedDate));
+      const apiDate = this.formatDateForAPI(this.selectedDate);
+      console.log('🚀 Today button calling onDateChange with:', apiDate);
+      this.onDateChange(apiDate);
     }
   }
 
