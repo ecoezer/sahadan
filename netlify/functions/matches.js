@@ -332,90 +332,101 @@ exports.handler = async (event, context) => {
     };
 
     try {
-      // Try to scrape from sahadan.com
-      const sahadanUrl = `https://arsiv.sahadan.com/Iddaa/program.aspx`;
-      console.log('🌐 Attempting to scrape from:', sahadanUrl);
+      // Try multiple sahadan.com URLs
+      const sahadanUrls = [
+        `https://arsiv.sahadan.com/Iddaa/program.aspx`,
+        `https://www.sahadan.com/iddaa/program`,
+        `https://www.sahadan.com/iddaa`,
+        `https://arsiv.sahadan.com/iddaa/program.aspx?date=${date}`,
+        `https://www.sahadan.com/iddaa/program?date=${date}`
+      ];
       
-      const response = await fetch(sahadanUrl, {
-        method: 'GET',
-        headers: {
-          'User-Agent': getRandomUserAgent(),
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'DNT': '1',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
-          'Cache-Control': 'max-age=0'
-        },
-        timeout: 15000
-      });
+      let scrapedMatches = [];
+      let successfulUrl = null;
+      
+      for (const sahadanUrl of sahadanUrls) {
+        console.log('🌐 Attempting to scrape from:', sahadanUrl);
+        
+        try {
+          const response = await fetch(sahadanUrl, {
+            method: 'GET',
+            headers: {
+              'User-Agent': getRandomUserAgent(),
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
+              'Accept-Encoding': 'gzip, deflate, br',
+              'DNT': '1',
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1',
+              'Sec-Fetch-Dest': 'document',
+              'Sec-Fetch-Mode': 'navigate',
+              'Sec-Fetch-Site': 'none',
+              'Cache-Control': 'max-age=0',
+              'Referer': 'https://www.google.com/'
+            },
+            timeout: 10000
+          });
 
-      if (response.ok) {
-        const html = await response.text();
-        console.log('✅ Successfully fetched HTML, length:', html.length);
-        
-        // Debug: Log HTML structure analysis
-        console.log('🔍 HTML STRUCTURE ANALYSIS:');
-        console.log('- Total <tr> elements:', (html.match(/<tr/gi) || []).length);
-        console.log('- Total <td> elements:', (html.match(/<td/gi) || []).length);
-        console.log('- Total <table> elements:', (html.match(/<table/gi) || []).length);
-        console.log('- Contains "Iddaa":', html.includes('Iddaa') || html.includes('İddaa'));
-        console.log('- Contains time patterns:', (html.match(/\d{1,2}:\d{2}/g) || []).length);
-        console.log('- Contains team separators:', (html.match(/[-–]/g) || []).length);
-        console.log('- Contains odds patterns:', (html.match(/\d+[.,]\d{2}/g) || []).length);
-        
-        // Debug: Log sample HTML content
-        const htmlSample = html.substring(0, 2000);
-        console.log('🔍 HTML SAMPLE (first 2000 chars):', htmlSample);
-        
-        // Debug: Look for specific sahadan elements
-        const tableMatches = html.match(/<table[^>]*>/gi) || [];
-        console.log('🔍 FOUND TABLES:', tableMatches.length);
-        tableMatches.forEach((table, index) => {
-          console.log(`Table ${index + 1}:`, table.substring(0, 200));
-        });
-        
-        // Debug: Look for rows with potential match data
-        const rowsWithTime = html.match(/<tr[^>]*>.*?\d{1,2}:\d{2}.*?<\/tr>/gi) || [];
-        console.log('🔍 ROWS WITH TIME PATTERNS:', rowsWithTime.length);
-        rowsWithTime.slice(0, 3).forEach((row, index) => {
-          console.log(`Time Row ${index + 1}:`, row.substring(0, 300));
-        });
-        
-        const scrapedMatches = parseMatchesFromHTML(html);
-        
-        if (scrapedMatches && scrapedMatches.length > 0) {
-          matches = scrapedMatches;
-          source = 'sahadan.com';
-          debug = {
-            requestedDate: date,
-            htmlLength: html.length,
-            extractedMatches: matches.length,
-            sampleData: false,
-            parser: 'enhanced-html-parser',
-            scrapingSuccess: true,
-            htmlStructure: {
+          if (response.ok) {
+            const html = await response.text();
+            console.log('✅ Successfully fetched HTML from', sahadanUrl, ', length:', html.length);
+            
+            // Enhanced debug logging
+            const htmlAnalysis = {
               totalTrElements: (html.match(/<tr/gi) || []).length,
               totalTdElements: (html.match(/<td/gi) || []).length,
               totalTableElements: (html.match(/<table/gi) || []).length,
+              containsIddaa: html.includes('Iddaa') || html.includes('İddaa') || html.includes('iddaa'),
               timePatterns: (html.match(/\d{1,2}:\d{2}/g) || []).length,
-              oddsPatterns: (html.match(/\d+[.,]\d{2}/g) || []).length
+              teamSeparators: (html.match(/[-–]/g) || []).length,
+              oddsPatterns: (html.match(/\d+[.,]\d{2}/g) || []).length,
+              containsMatchData: html.includes('match') || html.includes('maç') || html.includes('takım'),
+              containsBettingData: html.includes('bahis') || html.includes('oran') || html.includes('kupon')
+            };
+            
+            console.log('🔍 HTML ANALYSIS for', sahadanUrl, ':', htmlAnalysis);
+            
+            // Try to parse matches
+            const urlMatches = parseMatchesFromHTML(html);
+            
+            if (urlMatches && urlMatches.length > 0) {
+              scrapedMatches = urlMatches;
+              successfulUrl = sahadanUrl;
+              console.log('🎉 Successfully scraped', urlMatches.length, 'matches from', sahadanUrl);
+              break; // Stop trying other URLs
+            } else {
+              console.log('⚠️ No matches found from', sahadanUrl);
+              
+              // Log sample HTML for debugging
+              const htmlSample = html.substring(0, 1000);
+              console.log('🔍 HTML SAMPLE from', sahadanUrl, ':', htmlSample);
             }
-          };
-          console.log('🎉 Successfully scraped', matches.length, 'matches from sahadan.com');
-        } else {
-          console.log('⚠️ No matches found in scraped content, using fallback');
-          console.log('🔍 PARSING FAILED - HTML might have different structure');
-          matches = generateFallbackMatches(date);
+          } else {
+            console.log('❌ Failed to fetch from', sahadanUrl, ', status:', response.status);
+          }
+        } catch (urlError) {
+          console.log('❌ Error fetching from', sahadanUrl, ':', urlError.message);
+          continue; // Try next URL
         }
+      }
+      
+      if (scrapedMatches && scrapedMatches.length > 0) {
+        matches = scrapedMatches;
+        source = successfulUrl;
+        debug = {
+          requestedDate: date,
+          extractedMatches: matches.length,
+          sampleData: false,
+          parser: 'enhanced-html-parser',
+          scrapingSuccess: true,
+          successfulUrl: successfulUrl,
+          triedUrls: sahadanUrls.length
+        };
       } else {
-        console.log('❌ Failed to fetch from sahadan.com, status:', response.status);
+        console.log('⚠️ No matches found from any sahadan URL, using fallback');
         matches = generateFallbackMatches(date);
       }
+      
     } catch (scrapingError) {
       console.error('❌ Scraping error:', scrapingError.message);
       matches = generateFallbackMatches(date);
