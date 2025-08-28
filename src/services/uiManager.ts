@@ -244,9 +244,9 @@ export class UIManager {
           break;
         case 'status':
           // Custom status sorting: ● (live) first, then C (cancelled)
-          const statusOrder = { '●': 1, 'C': 2, '': 3 };
-          aValue = statusOrder[aValue] || 3;
-          bValue = statusOrder[bValue] || 3;
+          const statusOrder: { [key: string]: number } = { '●': 1, 'C': 2, '': 3 };
+          aValue = statusOrder[aValue as string] || 3;
+          bValue = statusOrder[bValue as string] || 3;
           break;
       }
 
