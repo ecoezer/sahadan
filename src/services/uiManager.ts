@@ -8,7 +8,6 @@ export class UIManager {
   private lastUpdated!: HTMLElement;
   private currentMatches: any[] = [];
   private selectedDate: string = this.getTodayString();
-  private onDateChange: (date: string) => void = () => {};
 
   constructor() {
     this.container = document.getElementById('app')!;
@@ -355,7 +354,7 @@ export class UIManager {
   }
 
   setDateChangeHandler(handler: (date: string) => void): void {
-    this.onDateChange = handler;
+    // Date change handler would be used here if we had date selection UI
   }
 
   getSelectedDate(): string {
