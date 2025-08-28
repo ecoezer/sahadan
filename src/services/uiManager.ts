@@ -33,33 +33,6 @@ export class UIManager {
     return result;
   }
 
-  private generateDateOptions(): string {
-    const options: string[] = [];
-    const today = new Date();
-    
-    // Add past 30 days
-    for (let i = 30; i >= 1; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateStr = this.formatDateString(date);
-      options.push(`<option value="${dateStr}">${dateStr}</option>`);
-    }
-    
-    // Add today
-    const todayStr = this.formatDateString(today);
-    options.push(`<option value="${todayStr}" selected>${todayStr} (Bugün)</option>`);
-    
-    // Add next 7 days
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dateStr = this.formatDateString(date);
-      const dayName = date.toLocaleDateString('tr-TR', { weekday: 'short' });
-      options.push(`<option value="${dateStr}">${dateStr} (${dayName})</option>`);
-    }
-    
-    return options.join('');
-  }
 
   private formatDateString(date: Date): string {
     const day = date.getDate().toString().padStart(2, '0');
@@ -136,93 +109,10 @@ export class UIManager {
     });
   }
 
-  private navigateDate(direction: number): void {
-    const currentDate = this.parseDate(this.selectedDate);
-    currentDate.setDate(currentDate.getDate() + direction);
-    const newDateStr = this.formatDateString(currentDate);
-    console.log('🔄 Navigate date:', direction, 'New date:', newDateStr);
-    
-    // Update the selector
-    const selector = this.dateSelector as HTMLSelectElement;
-    const option = Array.from(selector.options).find(opt => opt.value === newDateStr);
-    
-    if (option) {
-      selector.value = newDateStr;
-      this.selectedDate = newDateStr;
-      this.updateSelectedDateDisplay();
-      const apiDate = this.formatDateForAPI(this.selectedDate);
-      console.log('🚀 Navigate calling onDateChange with:', apiDate);
-      this.onDateChange(apiDate);
-    } else {
-      // If date is not in the list, add it dynamically
-      this.addDateOption(newDateStr);
-      selector.value = newDateStr;
-      this.selectedDate = newDateStr;
-      this.updateSelectedDateDisplay();
-      const apiDate = this.formatDateForAPI(this.selectedDate);
-      console.log('🚀 Navigate (new option) calling onDateChange with:', apiDate);
-      this.onDateChange(apiDate);
-    }
-  }
 
-  private parseDate(dateStr: string): Date {
-    const [day, month, year] = dateStr.split('.').map(Number);
-    return new Date(year, month - 1, day);
-  }
 
-  private addDateOption(dateStr: string): void {
-    const selector = this.dateSelector as HTMLSelectElement;
-    const option = document.createElement('option');
-    option.value = dateStr;
-    option.textContent = dateStr;
-    
-    // Insert in chronological order
-    const options = Array.from(selector.options);
-    let inserted = false;
-    
-    for (let i = 0; i < options.length; i++) {
-      const optionDate = this.parseDate(options[i].value);
-      const newDate = this.parseDate(dateStr);
-      
-      if (newDate < optionDate) {
-        selector.insertBefore(option, options[i]);
-        inserted = true;
-        break;
-      }
-    }
-    
-    if (!inserted) {
-      selector.appendChild(option);
-    }
-  }
 
-  private goToToday(): void {
-    const todayStr = this.getTodayString();
-    const selector = this.dateSelector as HTMLSelectElement;
-    
-    // Find today's option
-    const todayOption = Array.from(selector.options).find(opt => 
-      opt.value === todayStr || opt.textContent?.includes('Bugün')
-    );
-    
-    if (todayOption) {
-      selector.value = todayOption.value;
-      this.selectedDate = todayOption.value;
-      this.updateSelectedDateDisplay();
-      const apiDate = this.formatDateForAPI(this.selectedDate);
-      console.log('🚀 Today button calling onDateChange with:', apiDate);
-      this.onDateChange(apiDate);
-    }
-  }
 
-  private updateSelectedDateDisplay(): void {
-    const display = document.getElementById('selected-date-display')!;
-    const date = this.parseDate(this.selectedDate);
-    const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' });
-    const isToday = this.selectedDate === this.getTodayString();
-    
-    display.textContent = isToday ? `${this.selectedDate} (Bugün - ${dayName})` : `${this.selectedDate} (${dayName})`;
-  }
 
   showLoading(): void {
     this.loadingElement.classList.remove('hidden');
@@ -317,135 +207,8 @@ export class UIManager {
     }
   }
 
-  private sortMatches(column: string): void {
-    // Toggle sort direction if clicking the same column
-    if (this.sortState.column === column) {
-      this.sortState.direction = this.sortState.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortState.column = column;
-      this.sortState.direction = 'asc';
-    }
 
-    this.currentMatches.sort((a, b) => {
-      let aValue = a[column];
-      let bValue = b[column];
 
-      // Handle different data types
-      switch (column) {
-        case 'time':
-          // Convert time to minutes for proper sorting
-          const aMinutes = this.timeToMinutes(aValue);
-          const bMinutes = this.timeToMinutes(bValue);
-          aValue = aMinutes;
-          bValue = bMinutes;
-          break;
-        case 'odds1':
-        case 'oddsX':
-        case 'odds2':
-        case 'under25':
-          // Convert odds to numbers
-          aValue = parseFloat(aValue) || 0;
-          bValue = parseFloat(bValue) || 0;
-          break;
-        case 'code':
-          // Convert codes to numbers
-          aValue = parseInt(aValue) || 0;
-          bValue = parseInt(bValue) || 0;
-          break;
-        case 'homeTeam':
-        case 'awayTeam':
-        case 'league':
-          // String comparison (case insensitive)
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-          break;
-        case 'status':
-          // Custom status sorting: ● (live) first, then C (cancelled)
-          const statusOrder: { [key: string]: number } = { '●': 1, 'C': 2, '': 3 };
-          aValue = statusOrder[aValue as string] || 3;
-          bValue = statusOrder[bValue as string] || 3;
-          break;
-      }
-
-      let comparison = 0;
-      if (aValue < bValue) comparison = -1;
-      if (aValue > bValue) comparison = 1;
-
-      return this.sortState.direction === 'asc' ? comparison : -comparison;
-    });
-
-    // Re-render the table with sorted data
-    this.renderSortedMatches();
-  }
-
-  private timeToMinutes(timeStr: string): number {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  private renderSortedMatches(): void {
-    const matchesHTML = this.currentMatches.map((match) => {
-      return `
-        <tr class="match-row">
-          <td class="time-cell">${match.time}</td>
-          <td class="country-cell">${match.country}</td>
-          <td class="league-cell">${match.league}</td>
-          <td class="status-cell">
-            ${match.status === '●' ? '<span class="status-live">●</span>' : 
-              match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
-          </td>
-          <td class="teams-cell">
-            <span class="home-team">${match.homeTeam}</span>
-            <span class="vs-separator"> - </span>
-            <span class="away-team">${match.awayTeam}</span>
-          </td>
-          <td class="score-cell">${match.score}</td>
-          <td class="code-cell">${match.code}</td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.odds1}</div>
-            <div class="odds-code">01</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.oddsX}</div>
-            <div class="odds-code">02</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.odds2}</div>
-            <div class="odds-code">03</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.over25}</div>
-            <div class="odds-code">01</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.under25}</div>
-            <div class="odds-code">02</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.doubleChance1X}</div>
-            <div class="odds-code">01</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.doubleChance12}</div>
-            <div class="odds-code">02</div>
-          </td>
-          <td class="odds-cell">
-            <div class="odds-value">${match.doubleChanceX2}</div>
-            <div class="odds-code">03</div>
-          </td>
-          <td class="all-cell">
-            <button class="bet-all-button">💰</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    // Update only the tbody
-    const tbody = this.matchesContainer.querySelector('tbody');
-    if (tbody) {
-      tbody.innerHTML = matchesHTML;
-    }
-  }
   private renderMatches(matches: Match[]): void {
     if (matches.length === 0) {
       this.matchesContainer.innerHTML = `
@@ -579,21 +342,6 @@ export class UIManager {
     `;
   }
 
-  private updateSortIndicators(): void {
-    // Clear all sort indicators
-    const indicators = this.matchesContainer.querySelectorAll('.sort-indicator');
-    indicators.forEach(indicator => {
-      indicator.textContent = '';
-    });
-
-    // Set the active sort indicator
-    if (this.sortState.column) {
-      const activeHeader = this.matchesContainer.querySelector(`[data-column="${this.sortState.column}"] .sort-indicator`);
-      if (activeHeader) {
-        activeHeader.textContent = this.sortState.direction === 'asc' ? ' ▲' : ' ▼';
-      }
-    }
-  }
 
   private updateTimestamp(timestamp: string): void {
     const date = new Date(timestamp);
