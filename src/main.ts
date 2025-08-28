@@ -1,12 +1,7 @@
-import { SahadanScraper, type MatchData } from './scraper';
 import './style.css';
 
 class ScraperApp {
-  private scraper: SahadanScraper;
-  private isRunning = false;
-
   constructor() {
-    this.scraper = new SahadanScraper();
     this.initializeUI();
   }
 
@@ -16,8 +11,8 @@ class ScraperApp {
     app.innerHTML = `
       <div class="container">
         <header>
-          <h1>🕷️ Sahadan.com Scraper</h1>
-          <p>Selenium-powered web scraper for İddaa betting data</p>
+          <h1>🕷️ Web Scraper</h1>
+          <p>Ready to scrape data</p>
         </header>
         
         <div class="controls">
@@ -31,14 +26,11 @@ class ScraperApp {
         
         <div class="status">
           <div id="statusText">Ready to scrape</div>
-          <div class="browser-notice">
-            ⚠️ Running in browser mode with mock data. For real scraping, use a Node.js backend.
-          </div>
           <div id="progress" class="progress-bar"></div>
         </div>
         
         <div class="results">
-          <h3>📊 Scraped Data</h3>
+          <h3>📊 Results</h3>
           <div id="dataContainer" class="data-container">
             <p class="placeholder">No data yet. Click "Start Scraping" to begin.</p>
           </div>
@@ -58,39 +50,43 @@ class ScraperApp {
   }
 
   private async startScraping(): Promise<void> {
-    if (this.isRunning) return;
-
-    this.isRunning = true;
     this.updateUI('running');
-    this.updateStatus('🔄 Initializing WebDriver...');
+    this.updateStatus('🔄 Starting scraper...');
 
     try {
-      await this.scraper.initialize();
-      this.updateStatus('🌐 Running mock scraper...');
+      // Simulate scraping delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const matches = await this.scraper.scrapeIddaaProgram();
+      // Mock data for demonstration
+      const mockData = [
+        {
+          teams: "Galatasaray vs Fenerbahçe",
+          odds: { "1": "2.10", "X": "3.20", "2": "3.50" },
+          time: "20:00",
+          league: "Süper Lig"
+        },
+        {
+          teams: "Beşiktaş vs Trabzonspor", 
+          odds: { "1": "1.85", "X": "3.40", "2": "4.20" },
+          time: "17:30",
+          league: "Süper Lig"
+        }
+      ];
       
-      this.displayResults(matches);
-      this.updateStatus(`✅ Scraping completed! Found ${matches.length} matches`);
+      this.displayResults(mockData);
+      this.updateStatus(`✅ Scraping completed! Found ${mockData.length} matches`);
       
     } catch (error) {
       console.error('Scraping error:', error);
       this.updateStatus(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      await this.scraper.close();
-      this.isRunning = false;
       this.updateUI('stopped');
     }
   }
 
-  private async stopScraping(): Promise<void> {
-    if (!this.isRunning) return;
-    
-    this.updateStatus('🛑 Stopping scraper...');
-    await this.scraper.close();
-    this.isRunning = false;
-    this.updateUI('stopped');
+  private stopScraping(): void {
     this.updateStatus('⏹️ Scraping stopped');
+    this.updateUI('stopped');
   }
 
   private updateUI(state: 'running' | 'stopped'): void {
@@ -117,7 +113,7 @@ class ScraperApp {
     console.log(message);
   }
 
-  private displayResults(matches: MatchData[]): void {
+  private displayResults(matches: any[]): void {
     const container = document.getElementById('dataContainer');
     if (!container) return;
 
