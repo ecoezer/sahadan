@@ -171,213 +171,336 @@ function generateSampleDataForDate(requestedDate) {
   let dateObj;
   if (requestedDate && requestedDate.includes('-')) {
     // YYYY-MM-DD format
-    dateObj = new Date(requestedDate + 'T12:00:00');
+    const [year, month, day] = requestedDate.split('-');
+    dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
   } else if (requestedDate && requestedDate.includes('.')) {
     // DD.MM.YYYY format
     const [day, month, year] = requestedDate.split('.');
-    dateObj = new Date(year, month - 1, day, 12, 0, 0);
+    dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
   } else {
     // Default to today
     dateObj = new Date();
   }
   
   console.log('Parsed date object:', dateObj);
+  
+  // Use the actual date to determine what matches to show
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  dateObj.setHours(0, 0, 0, 0);
+  
+  const daysDiff = Math.floor((dateObj - today) / (1000 * 60 * 60 * 24));
   const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const dateString = dateObj.toISOString().split('T')[0];
-  console.log('Day of week:', dayOfWeek, 'Date string:', dateString);
+  console.log('Day of week:', dayOfWeek, 'Date string:', dateString, 'Days from today:', daysDiff);
   
-  // Create different match sets based on the date
+  // Create different match sets based on the date and day of week
   const matchSets = {
-    0: [ // Sunday - Turkish league matches
+    0: [ // Sunday
       {
         id: 1,
-        time: '14:00',
+        time: daysDiff < 0 ? '14:00' : '15:00',
         homeTeam: 'Galatasaray',
         awayTeam: 'Fenerbahçe',
-        odds: { home: '2.15', draw: '3.25', away: '3.45' },
+        odds: { 
+          home: (2.15 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.25 + (daysDiff * 0.01)).toFixed(2), 
+          away: (3.45 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Süper Lig',
-        matchCode: 'GS001',
-        status: 'upcoming'
+        matchCode: `GS${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       },
       {
         id: 2,
-        time: '17:00',
+        time: daysDiff < 0 ? '17:00' : '18:30',
         homeTeam: 'Beşiktaş',
         awayTeam: 'Trabzonspor',
-        odds: { home: '1.90', draw: '3.35', away: '4.15' },
+        odds: { 
+          home: (1.90 + (daysDiff * 0.03)).toFixed(2), 
+          draw: (3.35 + (daysDiff * 0.01)).toFixed(2), 
+          away: (4.15 - (daysDiff * 0.03)).toFixed(2) 
+        },
         league: 'Süper Lig',
-        matchCode: 'BJK002',
-        status: 'upcoming'
+        matchCode: `BJK${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       }
     ],
-    1: [ // Monday - European matches
+    1: [ // Monday
       {
         id: 1,
-        time: '21:00',
-        homeTeam: 'Barcelona',
-        awayTeam: 'Real Madrid',
-        odds: { home: '2.50', draw: '3.15', away: '2.85' },
-        league: 'La Liga',
-        matchCode: 'BAR001',
-        status: 'upcoming'
-      },
-      {
-        id: 2,
-        time: '22:30',
-        homeTeam: 'Manchester City',
-        awayTeam: 'Liverpool',
-        odds: { home: '2.25', draw: '3.25', away: '3.05' },
-        league: 'Premier League',
-        matchCode: 'MCI002',
-        status: 'upcoming'
-      }
-    ],
-    2: [ // Tuesday - Champions League
-      {
-        id: 1,
-        time: '21:00',
-        homeTeam: 'Bayern Munich',
-        awayTeam: 'PSG',
-        odds: { home: '2.00', draw: '3.55', away: '3.75' },
-        league: 'Champions League',
-        matchCode: 'BAY001',
-        status: 'upcoming',
-        overUnder: { over25: '1.75', under25: '2.05' }
-      },
-      {
-        id: 2,
-        time: '20:00',
-        homeTeam: 'Inter Milan',
-        awayTeam: 'Arsenal',
-        odds: { home: '2.35', draw: '3.15', away: '2.95' },
-        league: 'Champions League',
-        matchCode: 'INT002',
-        status: 'upcoming'
-      }
-    ],
-    3: [ // Wednesday - Turkish Cup
-      {
-        id: 1,
-        time: '19:30',
+        time: daysDiff < 0 ? '20:00' : '21:00',
         homeTeam: 'Başakşehir',
         awayTeam: 'Antalyaspor',
-        odds: { home: '2.05', draw: '3.25', away: '3.70' },
-        league: 'Türkiye Kupası',
-        matchCode: 'BSK001',
-        status: 'upcoming'
+        odds: { 
+          home: (2.05 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.25 + (daysDiff * 0.01)).toFixed(2), 
+          away: (3.70 - (daysDiff * 0.02)).toFixed(2) 
+        },
+        league: 'Süper Lig',
+        matchCode: `BSK${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       },
       {
         id: 2,
-        time: '21:30',
+        time: daysDiff < 0 ? '19:30' : '20:30',
         homeTeam: 'Konyaspor',
         awayTeam: 'Sivasspor',
-        odds: { home: '2.45', draw: '3.05', away: '2.90' },
-        league: 'Türkiye Kupası',
-        matchCode: 'KON002',
-        status: 'upcoming'
+        odds: { 
+          home: (2.45 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.05 + (daysDiff * 0.01)).toFixed(2), 
+          away: (2.90 - (daysDiff * 0.02)).toFixed(2) 
+        },
+        league: 'Süper Lig',
+        matchCode: `KON${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       }
     ],
-    4: [ // Thursday - Europa League
+    2: [ // Tuesday
       {
         id: 1,
-        time: '20:00',
+        time: daysDiff < 0 ? '20:45' : '21:00',
+        homeTeam: 'Bayern Munich',
+        awayTeam: 'PSG',
+        odds: { 
+          home: (2.00 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.55 + (daysDiff * 0.01)).toFixed(2), 
+          away: (3.75 - (daysDiff * 0.02)).toFixed(2) 
+        },
+        league: 'Champions League',
+        matchCode: `BAY${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming',
+        overUnder: { 
+          over25: (1.75 + (daysDiff * 0.01)).toFixed(2), 
+          under25: (2.05 - (daysDiff * 0.01)).toFixed(2) 
+        }
+      },
+      {
+        id: 2,
+        time: daysDiff < 0 ? '18:45' : '20:00',
+        homeTeam: 'Inter Milan',
+        awayTeam: 'Arsenal',
+        odds: { 
+          home: (2.35 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.15 + (daysDiff * 0.01)).toFixed(2), 
+          away: (2.95 - (daysDiff * 0.02)).toFixed(2) 
+        },
+        league: 'Champions League',
+        matchCode: `INT${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
+      }
+    ],
+    3: [ // Wednesday
+      {
+        id: 1,
+        time: daysDiff < 0 ? '19:00' : '19:30',
+        homeTeam: 'Kayserispor',
+        awayTeam: 'Rizespor',
+        odds: { 
+          home: (1.85 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.45 + (daysDiff * 0.01)).toFixed(2), 
+          away: (4.20 - (daysDiff * 0.02)).toFixed(2) 
+        },
+        league: '1. Lig',
+        matchCode: `KAY${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
+      },
+      {
+        id: 2,
+        time: daysDiff < 0 ? '20:30' : '21:30',
+        homeTeam: 'Erzurumspor',
+        awayTeam: 'Bandırmaspor',
+        odds: { 
+          home: (2.65 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.15 + (daysDiff * 0.01)).toFixed(2), 
+          away: (2.55 - (daysDiff * 0.02)).toFixed(2) 
+        },
+        league: '1. Lig',
+        matchCode: `ERZ${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
+      }
+    ],
+    4: [ // Thursday
+      {
+        id: 1,
+        time: daysDiff < 0 ? '19:45' : '20:00',
         homeTeam: 'Atletico Madrid',
         awayTeam: 'Lazio',
-        odds: { home: '1.75', draw: '3.75', away: '4.40' },
+        odds: { 
+          home: (1.75 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.75 + (daysDiff * 0.01)).toFixed(2), 
+          away: (4.40 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Europa League',
-        matchCode: 'ATL001',
-        status: 'upcoming'
+        matchCode: `ATL${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       },
       {
         id: 2,
-        time: '22:00',
+        time: daysDiff < 0 ? '21:45' : '22:00',
         homeTeam: 'West Ham',
         awayTeam: 'Fiorentina',
-        odds: { home: '2.65', draw: '3.35', away: '2.65' },
+        odds: { 
+          home: (2.65 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.35 + (daysDiff * 0.01)).toFixed(2), 
+          away: (2.65 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Europa League',
-        matchCode: 'WHU002',
-        status: 'upcoming'
+        matchCode: `WHU${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       }
     ],
-    5: [ // Friday - Bundesliga
+    5: [ // Friday
       {
         id: 1,
-        time: '20:30',
+        time: daysDiff < 0 ? '20:00' : '20:30',
         homeTeam: 'Borussia Dortmund',
         awayTeam: 'RB Leipzig',
-        odds: { home: '2.15', draw: '3.45', away: '3.15' },
+        odds: { 
+          home: (2.15 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.45 + (daysDiff * 0.01)).toFixed(2), 
+          away: (3.15 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Bundesliga',
-        matchCode: 'BVB001',
-        status: 'upcoming',
-        overUnder: { over25: '1.65', under25: '2.25' }
+        matchCode: `BVB${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming',
+        overUnder: { 
+          over25: (1.65 + (daysDiff * 0.01)).toFixed(2), 
+          under25: (2.25 - (daysDiff * 0.01)).toFixed(2) 
+        }
       },
       {
         id: 2,
-        time: '22:30',
+        time: daysDiff < 0 ? '22:00' : '22:30',
         homeTeam: 'Bayer Leverkusen',
         awayTeam: 'Eintracht Frankfurt',
-        odds: { home: '1.80', draw: '3.60', away: '4.00' },
+        odds: { 
+          home: (1.80 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.60 + (daysDiff * 0.01)).toFixed(2), 
+          away: (4.00 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Bundesliga',
-        matchCode: 'B04002',
-        status: 'upcoming'
+        matchCode: `B04${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       }
     ],
-    6: [ // Saturday - Premier League
+    6: [ // Saturday
       {
         id: 1,
-        time: '14:30',
+        time: daysDiff < 0 ? '13:30' : '14:30',
         homeTeam: 'Chelsea',
         awayTeam: 'Tottenham',
-        odds: { home: '2.30', draw: '3.35', away: '2.95' },
+        odds: { 
+          home: (2.30 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.35 + (daysDiff * 0.01)).toFixed(2), 
+          away: (2.95 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Premier League',
-        matchCode: 'CHE001',
-        status: 'upcoming'
+        matchCode: `CHE${String(Math.abs(daysDiff) + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       },
       {
         id: 2,
-        time: '17:00',
+        time: daysDiff < 0 ? '16:00' : '17:00',
         homeTeam: 'Arsenal',
         awayTeam: 'Manchester United',
-        odds: { home: '1.95', draw: '3.55', away: '3.85' },
+        odds: { 
+          home: (1.95 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.55 + (daysDiff * 0.01)).toFixed(2), 
+          away: (3.85 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Premier League',
-        matchCode: 'ARS002',
-        status: 'upcoming'
+        matchCode: `ARS${String(Math.abs(daysDiff) + 2).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       },
       {
         id: 3,
-        time: '19:30',
+        time: daysDiff < 0 ? '18:30' : '19:30',
         homeTeam: 'Newcastle',
         awayTeam: 'Brighton',
-        odds: { home: '1.80', draw: '3.65', away: '4.25' },
+        odds: { 
+          home: (1.80 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.65 + (daysDiff * 0.01)).toFixed(2), 
+          away: (4.25 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Premier League',
-        matchCode: 'NEW003',
-        status: 'upcoming'
+        matchCode: `NEW${String(Math.abs(daysDiff) + 3).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       },
       {
         id: 4,
-        time: '21:45',
+        time: daysDiff < 0 ? '20:45' : '21:45',
         homeTeam: 'Aston Villa',
         awayTeam: 'West Ham',
-        odds: { home: '2.10', draw: '3.30', away: '3.40' },
+        odds: { 
+          home: (2.10 + (daysDiff * 0.02)).toFixed(2), 
+          draw: (3.30 + (daysDiff * 0.01)).toFixed(2), 
+          away: (3.40 - (daysDiff * 0.02)).toFixed(2) 
+        },
         league: 'Premier League',
-        matchCode: 'AVL004',
-        status: 'upcoming'
+        matchCode: `AVL${String(Math.abs(daysDiff) + 4).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming'
       }
     ]
   };
   
-  // Get matches for the day of week, or default to Sunday matches
+  // Get matches for the day of week, or create custom matches for far future/past dates
   let matches = JSON.parse(JSON.stringify(matchSets[dayOfWeek] || matchSets[0]));
-  console.log('Selected matches for day', dayOfWeek, ':', matches.length, 'matches');
   
-  // Add some variation based on the specific date
-  const day = dateObj.getDate();
-  const month = dateObj.getMonth() + 1;
-  const year = dateObj.getFullYear();
-  const dateHash = (day * 31 + month * 12 + year) % 100;
-  const variation = (dateHash % 5) * 0.05; // 0, 0.05, 0.10, 0.15, or 0.20
+  // For dates more than 7 days in the future or past, create special matches
+  if (Math.abs(daysDiff) > 7) {
+    const specialTeams = [
+      ['Galatasaray', 'Fenerbahçe'], ['Beşiktaş', 'Trabzonspor'], 
+      ['Barcelona', 'Real Madrid'], ['Manchester City', 'Liverpool'],
+      ['Bayern Munich', 'Borussia Dortmund'], ['Juventus', 'AC Milan'],
+      ['PSG', 'Marseille'], ['Ajax', 'Feyenoord']
+    ];
+    
+    const leagues = ['Süper Lig', 'La Liga', 'Premier League', 'Bundesliga', 'Serie A', 'Ligue 1', 'Eredivisie'];
+    
+    matches = [];
+    const numMatches = Math.min(Math.abs(daysDiff) % 6 + 2, 5); // 2-5 matches based on date
+    
+    for (let i = 0; i < numMatches; i++) {
+      const teamPair = specialTeams[i % specialTeams.length];
+      const baseOdds = [1.80 + (i * 0.15), 3.20 + (i * 0.10), 3.50 - (i * 0.15)];
+      const variation = (daysDiff * 0.01) + (i * 0.05);
+      
+      matches.push({
+        id: i + 1,
+        time: `${18 + (i % 3)}:${(i % 2) * 30}0`,
+        homeTeam: teamPair[0],
+        awayTeam: teamPair[1],
+        odds: {
+          home: (baseOdds[0] + variation).toFixed(2),
+          draw: (baseOdds[1] + variation * 0.5).toFixed(2),
+          away: (baseOdds[2] - variation).toFixed(2)
+        },
+        league: leagues[i % leagues.length],
+        matchCode: `SP${String(Math.abs(daysDiff) + i + 1).padStart(3, '0')}`,
+        status: daysDiff < 0 ? 'finished' : 'upcoming',
+        overUnder: i % 2 === 0 ? {
+          over25: (1.70 + variation).toFixed(2),
+          under25: (2.10 - variation).toFixed(2)
+        } : undefined
+      });
+    }
+  }
   
-  console.log('Date hash:', dateHash, 'Variation:', variation);
+  console.log('Selected matches for day', dayOfWeek, 'Date:', dateString, 'Days diff:', daysDiff, 'Matches:', matches.length);
+  
+  // Add scores for past matches
+  if (daysDiff < 0) {
+    matches = matches.map(match => ({
+      ...match,
+      score: `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 4)}`,
+      status: 'finished'
+    }));
+  }
+  
+  console.log('Final matches:', matches.map(m => `${m.homeTeam} vs ${m.awayTeam} (${m.status})`));
+  return matches;
+}
   
   // Modify odds slightly based on date variation
   matches = matches.map(match => ({
