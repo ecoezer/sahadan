@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import json
+import os
 
 class SahadanScraper:
     def __init__(self, headless=True):
@@ -27,6 +28,7 @@ class SahadanScraper:
             self.options.add_argument('--disable-backgrounding-occluded-windows')
             self.options.add_argument('--disable-extensions')
             self.options.add_argument('--disable-plugins')
+            self.options.binary_location = '/nix/store/*/bin/chromium'
         
         self.driver = None
         
@@ -51,7 +53,7 @@ class SahadanScraper:
             self.driver.get(url)
             
             # Wait for page to load
-            WebDriverWait(self.driver, 10).wait(
+            WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
             

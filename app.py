@@ -23,15 +23,14 @@ def get_chrome_options():
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-plugins')
     options.add_argument('--disable-images')
-    options.add_argument('--disable-javascript')
+    options.add_argument('--single-process')
+    options.add_argument('--disable-background-timer-throttling')
+    options.add_argument('--disable-renderer-backgrounding')
+    options.add_argument('--disable-backgrounding-occluded-windows')
     
-    # Railway-specific paths
+    # Railway-specific Chrome binary path
     if os.environ.get('RAILWAY_ENVIRONMENT'):
         options.binary_location = '/nix/store/*/bin/chromium'
-        options.add_argument('--single-process')
-        options.add_argument('--disable-background-timer-throttling')
-        options.add_argument('--disable-renderer-backgrounding')
-        options.add_argument('--disable-backgrounding-occluded-windows')
     
     return options
 
@@ -67,6 +66,7 @@ def get_status():
 @app.route('/health')
 def health_check():
     return jsonify({"status": "healthy", "environment": os.environ.get('RAILWAY_ENVIRONMENT', 'local')})
+
 def run_scraper_background():
     global scraped_data, scraping_status
     
