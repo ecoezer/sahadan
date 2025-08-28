@@ -6,6 +6,8 @@ export class UIManager {
   private errorElement!: HTMLElement;
   private matchesContainer!: HTMLElement;
   private lastUpdated!: HTMLElement;
+  private currentMatches: any[] = [];
+  private sortState: { column: string; direction: 'asc' | 'desc' } = { column: '', direction: 'asc' };
 
   constructor() {
     this.container = document.getElementById('app')!;
@@ -92,24 +94,14 @@ export class UIManager {
     this.errorElement.classList.add('hidden');
     this.matchesContainer.classList.remove('hidden');
 
+    this.currentMatches = this.prepareSahadanMatches();
     this.renderMatches(matches);
     this.updateTimestamp(timestamp);
   }
 
-  private renderMatches(matches: Match[]): void {
-    if (matches.length === 0) {
-      this.matchesContainer.innerHTML = `
-        <div class="no-matches">
-          <div class="no-matches-icon">📅</div>
-          <h3>Maç bulunamadı</h3>
-          <p>Şu anda mevcut bahis oranı bulunmamaktadır.</p>
-        </div>
-      `;
-      return;
-    }
-
+  private prepareSahadanMatches() {
     // Sahadan.com'daki gerçek veri yapısına göre örnek veriler
-    const sahadanMatches = [
+    return [
       {
         time: '18:30',
         country: '🇨🇿',
@@ -206,8 +198,149 @@ export class UIManager {
         all: ''
       }
     ];
+  }
 
-    const matchesHTML = sahadanMatches.map((match) => {
+  private sortMatches(column: string): void {
+    // Toggle sort direction if clicking the same column
+    if (this.sortState.column === column) {
+      this.sortState.direction = this.sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortState.column = column;
+      this.sortState.direction = 'asc';
+    }
+
+    this.currentMatches.sort((a, b) => {
+      let aValue = a[column];
+      let bValue = b[column];
+
+      // Handle different data types
+      switch (column) {
+        case 'time':
+          // Convert time to minutes for proper sorting
+          const aMinutes = this.timeToMinutes(aValue);
+          const bMinutes = this.timeToMinutes(bValue);
+          aValue = aMinutes;
+          bValue = bMinutes;
+          break;
+        case 'odds1':
+        case 'oddsX':
+        case 'odds2':
+        case 'under25':
+          // Convert odds to numbers
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
+          break;
+        case 'code':
+          // Convert codes to numbers
+          aValue = parseInt(aValue) || 0;
+          bValue = parseInt(bValue) || 0;
+          break;
+        case 'homeTeam':
+        case 'awayTeam':
+        case 'league':
+          // String comparison (case insensitive)
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+          break;
+        case 'status':
+          // Custom status sorting: ● (live) first, then C (cancelled)
+          const statusOrder = { '●': 1, 'C': 2, '': 3 };
+          aValue = statusOrder[aValue] || 3;
+          bValue = statusOrder[bValue] || 3;
+          break;
+      }
+
+      let comparison = 0;
+      if (aValue < bValue) comparison = -1;
+      if (aValue > bValue) comparison = 1;
+
+      return this.sortState.direction === 'asc' ? comparison : -comparison;
+    });
+
+    // Re-render the table with sorted data
+    this.renderSortedMatches();
+  }
+
+  private timeToMinutes(timeStr: string): number {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  private renderSortedMatches(): void {
+    const matchesHTML = this.currentMatches.map((match) => {
+      return `
+        <tr class="match-row">
+          <td class="time-cell">${match.time}</td>
+          <td class="country-cell">${match.country}</td>
+          <td class="league-cell">${match.league}</td>
+          <td class="status-cell">
+            ${match.status === '●' ? '<span class="status-live">●</span>' : 
+              match.status === 'C' ? '<span class="status-cancelled">C</span>' : ''}
+          </td>
+          <td class="teams-cell">
+            <span class="home-team">${match.homeTeam}</span>
+            <span class="vs-separator"> - </span>
+            <span class="away-team">${match.awayTeam}</span>
+          </td>
+          <td class="score-cell">${match.score}</td>
+          <td class="code-cell">${match.code}</td>
+          <td class="odds-cell">
+            <div class="odds-value">${match.odds1}</div>
+            <div class="odds-code">01</div>
+          </td>
+          <td class="odds-cell">
+            <div class="odds-value">${match.oddsX}</div>
+            <div class="odds-code">02</div>
+          </td>
+          <td class="odds-cell">
+            <div class="odds-value">${match.odds2}</div>
+            <div class="odds-code">03</div>
+          </td>
+          <td class="odds-cell">
+            ${match.over25 ? `<div class="odds-code">${match.over25}</div>` : ''}
+            ${match.under25 ? `<div class="odds-value">${match.under25}</div>` : ''}
+            ${match.under25 ? `<div class="odds-code">01</div>` : ''}
+          </td>
+          <td class="odds-cell">
+            <div class="odds-value red-odds">2,5Ü</div>
+            <div class="odds-code">02▲</div>
+          </td>
+          <td class="odds-cell">
+            ${match.doubleChance1X ? `<div class="odds-code">${match.doubleChance1X}</div>` : ''}
+            ${match.doubleChance12 ? `<div class="odds-value">${match.doubleChance12}</div>` : ''}
+          </td>
+          <td class="odds-cell">
+            ${match.doubleChance12 ? `<div class="odds-value">${match.doubleChance12}</div>` : ''}
+          </td>
+          <td class="odds-cell">
+            ${match.doubleChanceX2 ? `<div class="odds-value">${match.doubleChanceX2}</div>` : ''}
+          </td>
+          <td class="all-cell">
+            <button class="bet-all-button">💰</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Update only the tbody
+    const tbody = this.matchesContainer.querySelector('tbody');
+    if (tbody) {
+      tbody.innerHTML = matchesHTML;
+    }
+  }
+  private renderMatches(matches: Match[]): void {
+    if (matches.length === 0) {
+      this.matchesContainer.innerHTML = `
+        <div class="no-matches">
+          <div class="no-matches-icon">📅</div>
+          <h3>Maç bulunamadı</h3>
+          <p>Şu anda mevcut bahis oranı bulunmamaktadır.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const matchesHTML = this.currentMatches.map((match) => {
       return `
         <tr class="match-row">
           <td class="time-cell">${match.time}</td>
@@ -269,17 +402,39 @@ export class UIManager {
         <table class="betting-table">
           <thead>
             <tr class="table-header-row">
-              <th rowspan="2" class="time-header">IY</th>
-              <th rowspan="2" class="country-header">MS</th>
-              <th rowspan="2" class="league-header">MS</th>
-              <th rowspan="2" class="status-header">1</th>
-              <th rowspan="2" class="teams-header">X</th>
-              <th rowspan="2" class="score-header">2</th>
-              <th rowspan="2" class="code-header">Kod</th>
-              <th class="odds-header">1</th>
-              <th class="odds-header">X</th>
-              <th class="odds-header">2</th>
-              <th class="odds-header">2,5 Gol</th>
+              <th rowspan="2" class="time-header sortable" data-column="time">
+                IY <span class="sort-indicator"></span>
+              </th>
+              <th rowspan="2" class="country-header sortable" data-column="country">
+                MS <span class="sort-indicator"></span>
+              </th>
+              <th rowspan="2" class="league-header sortable" data-column="league">
+                MS <span class="sort-indicator"></span>
+              </th>
+              <th rowspan="2" class="status-header sortable" data-column="status">
+                1 <span class="sort-indicator"></span>
+              </th>
+              <th rowspan="2" class="teams-header sortable" data-column="homeTeam">
+                X <span class="sort-indicator"></span>
+              </th>
+              <th rowspan="2" class="score-header sortable" data-column="score">
+                2 <span class="sort-indicator"></span>
+              </th>
+              <th rowspan="2" class="code-header sortable" data-column="code">
+                Kod <span class="sort-indicator"></span>
+              </th>
+              <th class="odds-header sortable" data-column="odds1">
+                1 <span class="sort-indicator"></span>
+              </th>
+              <th class="odds-header sortable" data-column="oddsX">
+                X <span class="sort-indicator"></span>
+              </th>
+              <th class="odds-header sortable" data-column="odds2">
+                2 <span class="sort-indicator"></span>
+              </th>
+              <th class="odds-header sortable" data-column="under25">
+                2,5 Gol <span class="sort-indicator"></span>
+              </th>
               <th class="odds-header red-header">2,5A</th>
               <th class="odds-header">ÇŞ</th>
               <th class="odds-header">1-X</th>
@@ -305,6 +460,34 @@ export class UIManager {
         </table>
       </div>
     `;
+
+    // Add click event listeners to sortable headers
+    const sortableHeaders = this.matchesContainer.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        const column = header.getAttribute('data-column');
+        if (column) {
+          this.sortMatches(column);
+          this.updateSortIndicators();
+        }
+      });
+    });
+  }
+
+  private updateSortIndicators(): void {
+    // Clear all sort indicators
+    const indicators = this.matchesContainer.querySelectorAll('.sort-indicator');
+    indicators.forEach(indicator => {
+      indicator.textContent = '';
+    });
+
+    // Set the active sort indicator
+    if (this.sortState.column) {
+      const activeHeader = this.matchesContainer.querySelector(`[data-column="${this.sortState.column}"] .sort-indicator`);
+      if (activeHeader) {
+        activeHeader.textContent = this.sortState.direction === 'asc' ? ' ▲' : ' ▼';
+      }
+    }
   }
 
   private updateTimestamp(timestamp: string): void {

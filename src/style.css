@@ -193,6 +193,28 @@ body {
   background: linear-gradient(to bottom, #f0f8f0, #e0f0e0);
 }
 
+/* Sortable headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background: linear-gradient(to bottom, #e8f5e8, #d0e8d0) !important;
+}
+
+.sortable:active {
+  background: linear-gradient(to bottom, #d0e8d0, #c0d8c0) !important;
+}
+
+.sort-indicator {
+  font-size: 8px;
+  color: var(--sahadan-green);
+  font-weight: bold;
+  margin-left: 2px;
+}
 .table-header-row th:last-child,
 .table-subheader-row th:last-child {
   border-right: none;
